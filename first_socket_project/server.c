@@ -1,64 +1,35 @@
-// Server side C/C++ program to demonstrate Socket
-// programming
-#include <netinet/in.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#define PORT 8080
-int main(int argc, char const* argv[])
-{
-	int server_fd, new_socket, valread;
-	struct sockaddr_in address;
-	int opt = 1;
-	int addrlen = sizeof(address);
-	char buffer[1024] = { 0 };
-	char* hello = "Hello from server";
+#include <winsock2.h> // header file for enabling socket function on windows
 
-	// Creating socket file descriptor
-	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("socket failed");
-		exit(EXIT_FAILURE);
-	}
+#pragma commnet(lib, "ws2_32.lib") // library file need to be linked with the program to be able to use socket function
 
-	// Forcefully attaching socket to the port 8080
-	if (setsockopt(server_fd, SOL_SOCKET,
-				SO_REUSEADDR | SO_REUSEPORT, &opt,
-				sizeof(opt))) {
-		perror("setsockopt");
-		exit(EXIT_FAILURE);
-	}
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(PORT);
+int main() {
+	WSADATA wsa; // create a structure to hold additionnal information after socket has been initialized
+	SOCKET s;
 
-	// Forcefully attaching socket to the port 8080
-	if (bind(server_fd, (struct sockaddr*)&address,
-			sizeof(address))
-		< 0) {
-		perror("bind failed");
-		exit(EXIT_FAILURE);
+	// =============================================== Initialize socket ============================================================
+	// using WSAStartup() function to initialize socket
+	// first parameter is version of winsock and the the other is where to store data after initializing
+	// ==============================================================================================================================
+	printf("Initialising Socket...\n");
+	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+		printf("Failed. Error Code : %d",WSAGetLastError());
+		return 1;
 	}
-	if (listen(server_fd, 3) < 0) {
-		perror("listen");
-		exit(EXIT_FAILURE);
-	}
-	if ((new_socket
-		= accept(server_fd, (struct sockaddr*)&address,
-				(socklen_t*)&addrlen))
-		< 0) {
-		perror("accept");
-		exit(EXIT_FAILURE);
-	}
-	valread = read(new_socket, buffer, 1024);
-	printf("%s\n", buffer);
-	send(new_socket, hello, strlen(hello), 0);
-	printf("Hello message sent\n");
+	printf("Initialised.");
 
-	// closing the connected socket
-	close(new_socket);
-	// closing the listening socket
-	shutdown(server_fd, SHUT_RDWR);
+	// ================================================ Create a socket =============================================================
+	// socket(int af,int type,int protocol)
+	// af (address family): use AF_INET for IPv4 or AF_INET6 for IPv6
+	// type: use SOCK_STREAM for TCP(reliable, connection oriented) or SOCK_DGRAM for UDP(unreliable, connectionless)
+	// protocol: use 0 for Internet Protocol (IP)
+	// ==============================================================================================================================
+	printf("Creating Socket...\n");
+	if((s = socket(AF_INET , SOCK_STREAM , 0 )) == INVALID_SOCKET)
+	{
+		printf("Could not create socket : %d" , WSAGetLastError());
+	}
+	printf("Socket created.\n");
+
 	return 0;
 }
