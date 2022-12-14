@@ -14,6 +14,7 @@
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "8888"
+#define DEFAULT_IP_ADDRESS "192.168.55.110"
 
 int __cdecl main(void) 
 {
@@ -44,7 +45,7 @@ int __cdecl main(void)
     hints.ai_flags = AI_PASSIVE;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo(DEFAULT_IP_ADDRESS, DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
