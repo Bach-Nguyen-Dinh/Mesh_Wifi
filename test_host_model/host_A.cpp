@@ -4,10 +4,10 @@
 
 #pragma commnet(lib, "ws2_32.lib")
 
-#define host_A_addr "192.168.55.110"
+#define host_A_addr "192.168.55.112"
 #define host_A_port 8080
 
-#define host_B_addr "192.168.55.102"
+#define host_B_addr "192.168.55.110"
 #define host_B_port 8080
 
 SOCKET s, recv_s, connect_s;
