@@ -5,142 +5,265 @@
 
 #pragma commnet(lib, "ws2_32.lib")
 
-#define host_A_addr "192.168.55.112"
+#define DEFAULT_BUFLEN 512
+#define DEFAULT_FUNCLEN 20
+#define DEFAULT_DESTLEN 10
+#define DEFAULT_SRCLEN 10
+#define frame_size (DEFAULT_FUNCLEN + DEFAULT_BUFLEN + DEFAULT_SRCLEN + DEFAULT_DESTLEN)
+
+#define HOP_SIZE 2
+#define SOURCE "A"
+
+#define host_A_addr "127.0.0.1"
 #define host_A_port 8080
 
-#define host_B_addr "192.168.55.110"
+#define host_B_addr "127.0.0.1"
 #define host_B_port 8080
 
+#define host_D_addr "127.0.0.1"
+#define host_D_port 8080
+
+struct msg {
+    char function[DEFAULT_FUNCLEN];
+    char buffer[DEFAULT_BUFLEN];
+    char source[DEFAULT_SRCLEN];
+    char destination[DEFAULT_DESTLEN];
+    int size = frame_size;
+    char frame[frame_size];
+};
+
+struct hop_list {
+    const char *name;
+    const char *ip_addr;
+    int port;
+};
+
+// void add_to_hop(struct hop *hop, char *ip_addr, int port) {
+//     struct hop *temp;
+//     temp->ip_addr = ip_addr;
+//     temp->port = port;
+//     hop->next_hop = temp;
+// }
+
 std::mutex mt;
+struct hop_list hop[HOP_SIZE];
 
-SOCKET s, recv_s, connect_s;
-struct sockaddr_in host_A, host_B, host;
-char other_host_msg[2000];
-int recv_size;
+void create_hop() {
+    hop[0].name = "B";
+    hop[0].ip_addr = host_B_addr;
+    hop[0].port = host_B_port;
 
-// void accept_host() {
-//     printf("Waiting for incoming connections ... ");
-//     while(1) {
-//         mt.lock();
-//         int c = sizeof(struct sockaddr_in);
-//         if ((recv_s = accept(s, (struct sockaddr *)&host, &c)) == INVALID_SOCKET) {
-//             printf("Accept failed. Error code : %d\n", WSAGetLastError());
-//         }
-//         else {
-//             printf("Connection accepted.\n");
-//         }
+    hop[1].name = "D";
+    hop[1].ip_addr = host_D_addr;
+    hop[1].port = host_D_port;
+}
 
-//         if ((recv_size = recv(recv_s, other_host_msg, sizeof(other_host_msg), 0)) == SOCKET_ERROR) {
-//             printf("Receive failed. Error code: %d\n", WSAGetLastError());
-//         }
-//         else {
-//             printf("Message received.\n");
-//             other_host_msg[recv_size] = '\0';
-//             puts(other_host_msg);
-//         }
-//         mt.unlock();
-//     }
-// }
-// void connect_host() {
-//     printf("Connecting to server ... ");
-//     mt.lock();
-//     if (connect(connect_s, (struct sockaddr *)&host_B, sizeof(host_B)) < 0) {
-//         printf("Connect failed. Error code : %d\n", WSAGetLastError());
-//     }
-//     else {
-//         printf("Connected.\n");
-//         const char *msg = "Hello, this is host A";
-//         send(connect_s, msg, strlen(msg), 0);
-//     }
+void insert_to_frame(char *frame, char *seg, int pos, int size) {
+    for (int i=0; i<size; i++) {
+        *(frame + pos + i) = *(seg + i);
+    }
+}
 
-//     if ((recv_size = recv(connect_s, other_host_msg, sizeof(other_host_msg), 0)) == SOCKET_ERROR) {
-//             printf("Receive failed. Error code: %d\n", WSAGetLastError());
-//         }
-//         else {
-//             printf("Message received.\n");
-//             other_host_msg[recv_size] = '\0';
-//             puts(other_host_msg);
-//         }
-//     mt.unlock();
-// }
 
-int main() {
-    WSADATA wsa;
+struct msg extract_from_frame(char *frame) {
+    struct msg data;
+    int pos = 0;
 
-    host_A.sin_family = AF_INET;
-    host_A.sin_addr.s_addr = inet_addr(host_A_addr);
-    host_A.sin_port = htons(host_A_port);
+    for (int i=0; i<DEFAULT_FUNCLEN; i++) {
+        data.function[i] = *(frame + pos + i);
+    }
+    pos += DEFAULT_FUNCLEN;
 
-    host_B.sin_family = AF_INET;
-    host_B.sin_addr.s_addr = inet_addr(host_B_addr);
-    host_B.sin_port = htons(host_B_port);
+    for (int i=0; i<DEFAULT_BUFLEN; i++) {
+        data.buffer[i] = *(frame + pos + i);
+    }
+    pos += DEFAULT_BUFLEN;
 
-    printf("Initialising Socket ... ");
-	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+    for (int i=0; i<DEFAULT_SRCLEN; i++) {
+        data.source[i] = *(frame + pos + i);
+    }
+    pos += DEFAULT_SRCLEN;
+
+    for (int i=0; i<DEFAULT_DESTLEN; i++) {
+        data.destination[i] = *(frame + pos + i);
+    }
+
+    return data;
+}
+
+void create_frame(struct msg *input_data) {
+    int pos = 0;
+    insert_to_frame(input_data->frame, input_data->function, pos, DEFAULT_FUNCLEN);
+    pos += DEFAULT_FUNCLEN;
+    insert_to_frame(input_data->frame, input_data->buffer, pos, DEFAULT_BUFLEN);
+    pos += DEFAULT_BUFLEN;
+    insert_to_frame(input_data->frame, input_data->source, pos, DEFAULT_SRCLEN);
+    pos += DEFAULT_SRCLEN;
+    insert_to_frame(input_data->frame, input_data->destination, pos, DEFAULT_DESTLEN);
+}
+
+void send_data(struct msg *data) {
+    WSADATA wsaDATA;
+    SOCKET ConnectSocket;
+    struct sockaddr_in server;
+
+    create_frame(data);
+
+    printf("Sending data . . .\n");
+	if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0) {
 		printf("Failed. Error Code : %d\n", WSAGetLastError());
-		return 1;
 	}
-    else {
-	    printf("Initialised.\n");
-    }
 
-    printf("Creating Socket ... ");
-	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+	if ((ConnectSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
 		printf("Could not create socket. Error code : %d\n", WSAGetLastError());
-        return 1;
+        WSACleanup();
 	}
-    else {
-	    printf("Socket created.\n");
+
+    for(int i=0; i<HOP_SIZE; i++) {
+        server.sin_family = AF_INET;
+        server.sin_addr.s_addr = inet_addr(hop[i].ip_addr);
+        server.sin_port = htons(hop[i].port);
+
+        if (connect(ConnectSocket, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
+            printf("Connect failed. Error code : %d\n", WSAGetLastError());
+            closesocket(ConnectSocket);
+            WSACleanup();
+        }
+
+        if (send(ConnectSocket, data->frame, data->size, 0) == SOCKET_ERROR) {
+            printf("Send failed. Error code: %d\n", WSAGetLastError());
+            closesocket(ConnectSocket);
+            WSACleanup();
+        }
+        else {
+            printf("Sent\n");
+        }
     }
+
+    closesocket(ConnectSocket);
+    WSACleanup();
+}
+
+void server_function() {
+    mt.lock();
+    WSADATA wsaDATA;
+
+    SOCKET ListenSocket = INVALID_SOCKET;
+
+    struct sockaddr_in server;
+    struct msg data;
     
-    printf("Binding ... ");
-    if (bind(s, (struct sockaddr *)&host_B, sizeof(host_B)) == SOCKET_ERROR) {
+    char recvbuf[frame_size];
+
+    printf("\t\t\t\t\t\tStarting server . . .\n");
+	if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0) {
+		printf("Failed. Error Code : %d\n", WSAGetLastError());
+	}
+
+	if ((ListenSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+		printf("Could not create socket. Error code : %d\n", WSAGetLastError());
+        WSACleanup();
+	}
+
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr(host_A_addr);
+    server.sin_port = htons(host_A_port);
+
+    if (bind(ListenSocket, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
         printf("Bind failed. Error code : %d\n", WSAGetLastError());
-        return 1;
-    }
-    else {
-        printf("Bind done.\n");
+        closesocket(ListenSocket);
+        WSACleanup();
     }
 
-    listen(s, 3);
+    if ((listen(ListenSocket, SOMAXCONN))== SOCKET_ERROR) {
+        printf("Listen failed with error: %d\n", WSAGetLastError());
+        closesocket(ListenSocket);
+        WSACleanup();
+    }
 
-    printf("Connecting to server ... ");
-    if (connect(connect_s, (struct sockaddr *)&host_A, sizeof(host_A)) < 0) {
-        printf("Connect failed. Error code : %d\n", WSAGetLastError());
-    }
-    else {
-        printf("Connected.\n");
-        const char *msg = "Hello, this is host B";
-        send(connect_s, msg, strlen(msg), 0);
-    }
-    
-    printf("Waiting for incoming connections ... ");
-    int c = sizeof(struct sockaddr_in);
-    if ((recv_s = accept(s, (struct sockaddr *)&host, &c)) == INVALID_SOCKET) {
-        printf("Accept failed. Error code : %d\n", WSAGetLastError());
-    }
-    else {
-        printf("Connection accepted.\n");
-    }
-    
-    if ((recv_size = recv(recv_s, other_host_msg, sizeof(other_host_msg), 0)) == SOCKET_ERROR) {
+    printf("\t\t\t\t\t\tServer is running\n");
+
+    mt.unlock();
+
+    if (recv(ListenSocket, recvbuf, frame_size, 0) == SOCKET_ERROR) {
         printf("Receive failed. Error code: %d\n", WSAGetLastError());
-        return 1;
     }
     else {
         printf("Message received.\n");
-        other_host_msg[recv_size] = '\0';
-        puts(other_host_msg);
-    }
+        data = extract_from_frame(recvbuf);
 
-    printf("Closing socket ... ");
-    if (closesocket(s) < 0) {
-        printf("Could not close socket. Error code: %d\n", WSAGetLastError());
+        if (strcmp(data.function, "send") == 0) {
+            
+        }
     }
-    else {
-        printf("Socket closed.\n");
+}
+
+// void get_input(struct data_t *input) {
+//     char user_input[DEFAULT_BUFLEN];
+//     printf("Select function [send]: ");
+//     scanf("%s", user_input);
+//     input->function = user_input;
+    
+//     if (strcmp(input->function, "send") == 0) {
+//         printf("Enter message: ");
+//         scanf("%s", user_input);
+//         input->data = user_input;
+
+//         printf("Select destination [B/C]: ");
+//         scanf("%s", user_input);
+//         input->destination = user_input;
+//     }
+// }
+
+// void handle_input(struct data_t *input) {
+//     if ((strcmp(input->function, "send")) == 0) {
+//         send_data(input);
+//     }
+// }
+
+void client_function() {
+    struct msg data;
+
+    strcpy(data.source, SOURCE);
+
+    while(1) {
+        mt.lock();
+        printf("Select function [send / shut down]: ");
+        fgets(data.function, sizeof(data.function), stdin);
+        
+        if (strcmp(data.function, "send\n") == 0) {
+            printf("Enter message: ");
+            scanf("%s", data.buffer);
+
+            printf("Select destination [B / C / D]: ");
+            scanf("%s", data.destination);
+
+            mt.unlock();
+
+            send_data(&data);
+            continue;
+        }
+
+        if (strcmp(data.function, "shut down\n") == 0) {
+            mt.unlock();
+
+            for (int i=0; i<HOP_SIZE; i++) {
+                strcpy(data.destination, hop[i].name);
+                send_data(&data);
+            }
+        }
+        mt.unlock();  
     }
-	WSACleanup();
+}
+
+int main() {
+    create_hop();
+
+    std::thread thread_server = std::thread(server_function);
+    std::thread thread_client = std::thread(client_function);    
+
+    thread_server.join();
+    thread_client.join();
 
     return 0;
 }
