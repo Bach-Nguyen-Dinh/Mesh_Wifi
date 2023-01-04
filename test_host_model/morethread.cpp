@@ -79,7 +79,7 @@ void insert_to_arr(char *frame, char *seg, int pos, int size) {
     }
 }
 
-frame_t analyze_frame(char *frame) {
+frame_t read_frame(char *frame) {
     frame_t data;
     int pos = 0;
 
@@ -214,7 +214,7 @@ void process_request() {
             WSACleanup();
 
             // process the response frame after sending request frame
-            data_recv = analyze_frame(recvframe);
+            data_recv = read_frame(recvframe);
 
             if (strcmp(data_recv.destination, NODE_NAME) == 0) {
                 if (strcmp(data_recv.function, FUNC_TNFR) == 0) {
@@ -283,7 +283,7 @@ void process_repsonse() {
                 printf("\t\t\t\t\t\tReceive failed. Error code: %d\n", WSAGetLastError());
             }
             else {
-                data_recv = analyze_frame(recvframe);
+                data_recv = read_frame(recvframe);
 
                 // process incomming request frame
                 if (strcmp(data_recv.destination, NODE_NAME) == 0) {
