@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <winsock2.h>
 #include <thread>
+#include <chrono>
 #include <mutex>
+#include <condition_variable>
 
 #pragma commnet(lib, "ws2_32.lib")
 
@@ -44,7 +46,8 @@ typedef struct HOP_LIST{
 } hop_list_t;
 
 // =================================================== Global Variable ====================================================
-std::mutex mt;
+// std::mutex mt;
+std::condition_variable cv;
 
 hop_list_t hop[HOP_SIZE];
 
@@ -168,7 +171,12 @@ void process_input() {
 
         flag_req = 1;
 
-        while(flag_recv == 0) {};
+        auto start = std::chrono::high_resolution_clock::now();
+        auto stop = start;
+        while(flag_recv == 0) {
+            stop = std::chrono::high_resolution_clock::now();
+            if ((stop - start) > std::chrono::seconds(3)) break;;
+        };
     }
 }
 
@@ -198,7 +206,8 @@ void process_request() {
         }
 
         if (recv(ConnectSocket, recvframe, DEFAULT_FRAMELEN, 0) == SOCKET_ERROR) {
-            printf("Receive failed. Error code: %d\n", WSAGetLastError());
+            // printf("Receive failed. Error code: %d\n", WSAGetLastError());
+            continue;
         }
         else {
             closesocket(ConnectSocket);
@@ -266,7 +275,8 @@ void process_repsonse() {
 
         ClientSocket = accept(ListenSocket, NULL, NULL);
         if (ClientSocket == SOCKET_ERROR) {
-            printf("\t\t\t\t\t\tAccept failed. Error code: %d\n", WSAGetLastError());
+            // printf("\t\t\t\t\t\tAccept failed. Error code: %d\n", WSAGetLastError());
+            continue;
         }
         else {
             if (recv(ClientSocket, recvframe, DEFAULT_FRAMELEN, 0) == SOCKET_ERROR) {
