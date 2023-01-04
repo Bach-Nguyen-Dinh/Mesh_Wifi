@@ -204,20 +204,29 @@ void process_request() {
             closesocket(ConnectSocket);
             WSACleanup();
 
+            // process the response frame after sending request frame
             data_recv = analyze_frame(recvframe);
 
-            if (strcmp(data_recv.function, FUNC_TNFR) == 0) {
-                if (strcmp(data_recv.destination, NODE_NAME) == 0) {
-                    printf("Node %s transfered.\n", data_recv.source);   
+            if (strcmp(data_recv.destination, NODE_NAME) == 0) {
+                if (strcmp(data_recv.function, FUNC_TNFR) == 0) {
+                    printf("Node %s transfered.\n", data_recv.source);
                 }
-                else {
-                    send_to_hop(ConnectSocket, &data_recv);
+
+                if (strcmp(data_recv.function, FUNC_RECV) == 0) {
+                    printf("Node %s received.\n", data_recv.source);
+                    flag_recv = 1;
                 }
             }
+            else {
+                data_transfer = {};
 
-            if (strcmp(data_recv.function, FUNC_RECV) == 0) {
-                printf("Node %s received.\n", data_recv.source);
-                flag_recv = 1;
+                strcpy(data_transfer.function, data_recv.function);
+                strcpy(data_transfer.buffer, data_recv.buffer);
+                strcpy(data_transfer.source, data_recv.source);
+                strcpy(data_transfer.destination, data_recv.destination);
+                strcpy(data_transfer.previous, NODE_NAME);
+
+                flag_trfr = 1;
             }
         }
     }
@@ -266,9 +275,11 @@ void process_repsonse() {
             else {
                 data_recv = analyze_frame(recvframe);
 
+                // process incomming request frame
                 if (strcmp(data_recv.destination, NODE_NAME) == 0) {
                     if (strcmp(data_recv.function, FUNC_SEND) == 0) {
                         strcpy(data_rep.function, FUNC_RECV);
+                        strcpy(data_rep.buffer, data_recv.buffer);
                         strcpy(data_rep.source, data_recv.destination);
                         strcpy(data_rep.destination, data_recv.source);
                         strcpy(data_rep.previous, data_recv.destination);
@@ -293,8 +304,10 @@ void process_repsonse() {
                 }
                 else {
                     strcpy(data_rep.function, FUNC_TNFR);
+                    strcpy(data_rep.buffer, data_recv.buffer);
                     strcpy(data_rep.source, NODE_NAME);
                     strcpy(data_rep.destination, data_recv.source);
+                    strcpy(data_rep.previous, NODE_NAME);
 
                     create_frame(&data_rep);
                     if (send(ClientSocket, data_rep.frame, DEFAULT_FRAMELEN, 0)) {
