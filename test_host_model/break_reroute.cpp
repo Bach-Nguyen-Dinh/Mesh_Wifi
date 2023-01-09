@@ -56,6 +56,8 @@
 #include <winsock2.h>
 #include <thread>
 #include <chrono>
+#include <iostream>
+#include <string>
 
 #pragma commnet(lib, "ws2_32.lib")
 
@@ -84,23 +86,31 @@
 
 // =================================================== Define Structure ==================================================
 typedef struct FRAME{
-    char function[LEN_FUNC];
-    char buffer[LEN_BUFF];
-    char source[LEN_NAME];
-    char destination[LEN_NAME];
-    char frame[LEN_FRAME];
+    std::string function;
+    std::string buffer;
+    std::string source;
+    std::string destination;
+    std::string frame;
     int size_route;
-    char route[LEN_ROUTE];
+    std::string route;
 } frame_t;
 
 typedef struct HOP_LIST{
-    const char *name;
+    std::string name;
     const char *ip_addr;
     int port;
 } hop_list_t;
 
 // =================================================== Global Variable ====================================================
+WSADATA wsaDATA;
+
 hop_list_t hop[HOP_SIZE];
+
+frame_t data_input;
+
+int flag_check_hop = 0;
+int flag_in_hop;
+int flag_recv = 0;
 
 // =================================================== Define Function ====================================================
 void create_hop() {
@@ -113,8 +123,114 @@ void create_hop() {
     hop[1].port = HOST_D_PORT;
 }
 
-void insert_to_arr(char *frame, char *seg, int pos, int size) {
-    for (int i=0; i<size; i++) {
-        *(frame + pos + i) = *(seg + i);
+void create_frame(frame_t *data) {
+    (*data).frame = (*data).function + "|" + (*data).buffer + "|" + (*data).source + "|" + (*data).destination + "#";
+}
+
+frame_t read_frame(std::string frame) {
+    frame_t data;
+
+    int i = 0;
+    int seg_num = 0;
+
+    while(frame[i] != '#') {
+        if (frame[i] == '|') {
+            seg_num++;
+        }
+        else {
+            if (seg_num == 0) {
+                data.function += frame[i];
+            }
+
+            if (seg_num == 1) {
+                data.buffer += frame[i];
+            }
+
+            if (seg_num == 2) {
+                data.source += frame[i];
+            }
+
+            if (seg_num == 3) {
+                data.destination += frame[i];
+            }
+        }
+        i++;
     }
+    return data;
+}
+
+void find_route(SOCKET ConnectSocket, frame_t *data) {
+    struct sockaddr_in server;
+
+    create_frame(data);
+
+	if ((ConnectSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+		printf("Could not create socket. Error code : %d\n", WSAGetLastError());
+	}
+    else {
+
+    }
+}
+
+// =================================================== Thread Function ====================================================
+void p1() {
+    data_input.source = NODE_ID;
+
+    while(1) {
+        std::cout << "Select function [send / shutdown]: ";
+        std::cin >> data_input.function;
+            
+        if (data_input.function == FUNC_SEND) {
+            std::cout << "Enter message: ";
+            std::cin >> data_input.buffer;
+
+            std::cout << "Select destination [B / C / D]: ";
+            std::cin >> data_input.destination;
+        }
+
+        flag_check_hop = 1;
+        while(flag_recv == 0) {};
+    }
+}
+
+void p2() {
+    while(1) {
+        if (flag_check_hop) {
+            for (int i=0; i<HOP_SIZE; i++) {
+                if (data_input.destination == hop[i].name) {
+                    flag_in_hop = 1;
+                    break;
+                }
+            }
+            flag_check_hop = 1;
+        }
+        if (flag_in_hop) {
+            std::cout << "Found." << std::endl;
+            flag_in_hop = 0;
+        }
+    }
+}
+
+void p3() {
+
+}
+
+
+// ===================================================== Main Program =====================================================
+int main() {
+    create_hop();
+
+    // if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0) {
+	// 	printf("Failed. Error Code : %d\n", WSAGetLastError());
+	// }
+
+    std::thread t1 = std::thread(p1);
+    std::thread t2 = std::thread(p2);
+    // std::thread t3 = std::thread(p3);
+
+    t1.join();
+    t2.join();
+    // t3.join();
+
+    return 0;
 }
