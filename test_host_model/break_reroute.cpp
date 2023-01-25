@@ -74,15 +74,16 @@
 #define FUNC_RECV "receive"
 #define FUNC_TNFR "transfer"
 #define FUNC_SHDW "shutdown"
+#define FUNC_FIND "find"
 
 #define HOST_A_ADDR "127.0.0.1"
 #define HOST_A_PORT 8080
 
 #define HOST_B_ADDR "127.0.0.1"
-#define HOST_B_PORT 8080
+#define HOST_B_PORT 8081
 
 #define HOST_D_ADDR "127.0.0.1"
-#define HOST_D_PORT 8080
+#define HOST_D_PORT 8082
 
 // =================================================== Define Structure ==================================================
 typedef struct FRAME{
@@ -109,7 +110,7 @@ hop_list_t hop[HOP_SIZE];
 frame_t data_input;
 
 int flag_check_hop = 0;
-int flag_in_hop;
+int flag_in_hop = 0;
 int flag_recv = 0;
 
 // =================================================== Define Function ====================================================
@@ -127,7 +128,7 @@ void create_frame(frame_t *data) {
     (*data).frame = (*data).function + "|" + (*data).buffer + "|" + (*data).source + "|" + (*data).destination + "#";
 }
 
-frame_t read_frame(std::string frame) {
+frame_t read_frame(char frame[]) {
     frame_t data;
 
     int i = 0;
@@ -159,17 +160,65 @@ frame_t read_frame(std::string frame) {
     return data;
 }
 
-void find_route(SOCKET ConnectSocket, frame_t *data) {
+int find_route(std::string source, std::string destination) {
     struct sockaddr_in server;
+    SOCKET ConnectSocket;
 
-    create_frame(data);
+    int sizebuff = 100;
+    char recvbuff[sizebuff];
 
 	if ((ConnectSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-		printf("Could not create socket. Error code : %d\n", WSAGetLastError());
+		std::cout << "Could not create socket. Error code: " << WSAGetLastError() << std::endl;
+        exit(1);
 	}
-    else {
+        
+    for (int i=0; i<HOP_SIZE; i++) {
+        if (source == hop[i].name) {
+            continue;
+        }
 
+        server.sin_family = AF_INET;
+        server.sin_addr.s_addr = inet_addr(hop[i].ip_addr);
+        server.sin_port = htons(hop[i].port);
+    
+        if (connect(ConnectSocket, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
+            continue;
+        }
+        else {
+            std::string func = FUNC_FIND;
+            std::string buff = FUNC_FIND;
+            std::string src = source;
+            std::string dst = destination;
+            std::string frame = func + "|" + buff + "|" + src + "|" + dst + "#";
+
+            const int length = frame.length();
+        
+            // declaring character array (+1 for null terminator)
+            char *char_array = new char[length + 1];
+            
+            // copying the contents of the
+            // string to char array
+            strcpy(char_array, frame.c_str());
+            
+            send(ConnectSocket, char_array, sizeof(char_array), 0);
+            delete[] char_array;
+
+            
+            auto start = std::chrono::high_resolution_clock::now();
+            while(recv(ConnectSocket, recvbuff, sizebuff, 0) < 0) {
+                auto stop = std::chrono::high_resolution_clock::now();
+                if ((stop - start) >= std::chrono::seconds(5)) {
+                    break;
+                }
+            }
+
+            if (recvbuff) {
+                std::cout << hop[i].name << " found " << destination << std::endl;
+                return 1;
+            }
+        }
     }
+    return 0;
 }
 
 // =================================================== Thread Function ====================================================
@@ -202,17 +251,84 @@ void p2() {
                     break;
                 }
             }
-            flag_check_hop = 1;
+            flag_check_hop = 0;
         }
         if (flag_in_hop) {
             std::cout << "Found." << std::endl;
             flag_in_hop = 0;
         }
+        else {
+            find_route(data_input.source, data_input.destination);
+        }
     }
 }
 
 void p3() {
+    struct sockaddr_in server;
+    
+    SOCKET ListenSocket = INVALID_SOCKET;
+    SOCKET ClientSocket = INVALID_SOCKET;
 
+	if ((ListenSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+        WSACleanup();
+        exit(1);
+	}
+
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr(HOST_A_ADDR);
+    server.sin_port = htons(HOST_A_PORT);
+
+    if (bind(ListenSocket, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
+        closesocket(ListenSocket);
+        WSACleanup();
+        exit(1);
+    }
+
+    if ((listen(ListenSocket, SOMAXCONN))== SOCKET_ERROR) {
+        closesocket(ListenSocket);
+        WSACleanup();
+        exit(1);
+    }
+
+    while(1) {
+        frame_t data_recv;
+        int sizebuff = 500;
+        char recvbuff[sizebuff];
+
+        if (recv(ClientSocket, recvbuff, sizebuff, 0) == SOCKET_ERROR) {
+            continue;
+        }
+        else {
+            data_recv = read_frame(recvbuff);
+
+            if (data_recv.destination == NODE_ID) {
+                if (data_recv.function == FUNC_FIND) {
+                    frame_t data_rep;
+
+                    data_rep.function = FUNC_FIND;
+                    data_rep.buffer = data_recv.buffer;
+                    data_rep.source = NODE_ID;
+                    data_rep.destination = data_recv.source;
+
+                    create_frame(&data_rep);
+                    const int length = data_rep.frame.length();
+                
+                    // declaring character array (+1 for null terminator)
+                    char *char_array = new char[length + 1];
+                    
+                    // copying the contents of the
+                    // string to char array
+                    strcpy(char_array, data_rep.frame.c_str());
+
+                    send(ClientSocket, char_array, sizeof(char_array), 0);
+                    delete[] char_array;
+                }
+            }
+            else {
+                find_route(NODE_ID, data_recv.destination);
+            }
+        }
+    }
 }
 
 
@@ -220,17 +336,17 @@ void p3() {
 int main() {
     create_hop();
 
-    // if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0) {
-	// 	printf("Failed. Error Code : %d\n", WSAGetLastError());
-	// }
+    if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0) {
+		printf("Failed. Error Code : %d\n", WSAGetLastError());
+	}
 
     std::thread t1 = std::thread(p1);
     std::thread t2 = std::thread(p2);
-    // std::thread t3 = std::thread(p3);
+    std::thread t3 = std::thread(p3);
 
     t1.join();
     t2.join();
-    // t3.join();
+    t3.join();
 
     return 0;
 }
