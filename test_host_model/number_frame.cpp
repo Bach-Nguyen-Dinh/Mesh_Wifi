@@ -184,27 +184,6 @@ void p1() {
     }
 }
 
-void p2() {
-    // while(1) {
-    //     if (flag_check_hop) {
-    //         for (int i=0; i<HOP_SIZE; i++) {
-    //             if (data_input.destination == hop[i].name) {
-    //                 flag_in_hop = 1;
-    //                 break;
-    //             }
-    //         }
-    //         flag_check_hop = 0;
-    //     }
-    //     if (flag_in_hop) {
-    //         std::cout << "Found." << std::endl;
-    //         flag_in_hop = 0;
-    //     }
-    //     else {
-    //         find_route(data_input.source, data_input.destination);
-    //     }
-    // }
-}
-
 void p3() {
     struct sockaddr_in server;
     
@@ -279,11 +258,9 @@ void p3() {
 // ===================================================== Main Program =====================================================
 int main() {
     std::thread t1 = std::thread(p1);
-    std::thread t2 = std::thread(p2);
     std::thread t3 = std::thread(p3);
 
     t1.join();
-    t2.join();
     t3.join();
 
     return 0;
