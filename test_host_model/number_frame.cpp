@@ -31,8 +31,8 @@
 #define NODE_D_ADDR "127.0.0.1"
 #define NODE_D_PORT 8080
 
-#define HOP_SIZE 1
 #define NODE_ID NODE_B_ID
+#define HOP_SIZE ((NODE_ID != NODE_B_ID)?1:2)
 
 // =================================================== Define Structure ==================================================
 typedef struct FRAME{
@@ -60,9 +60,25 @@ char quit_standby = 0;
 
 // =================================================== Define Function ====================================================
 void create_hop() {
-    hop[0].id = NODE_B_ID;
-    hop[0].ip_addr = NODE_B_ADDR;
-    hop[0].port = NODE_B_PORT;
+    if (NODE_ID == NODE_B_ID) {
+        hop[0].id = NODE_A_ID;
+        hop[0].ip_addr = NODE_A_ADDR;
+        hop[0].port = NODE_A_PORT;
+
+        hop[1].id = NODE_C_ID;
+        hop[1].ip_addr = NODE_C_ADDR;
+        hop[1].port = NODE_C_PORT;
+    }
+    if (NODE_ID == NODE_A_ID) {
+        hop[0].id = NODE_B_ID;
+        hop[0].ip_addr = NODE_B_ADDR;
+        hop[0].port = NODE_B_PORT;
+    }
+    if (NODE_ID == NODE_C_ID) {
+        hop[0].id = NODE_B_ID;
+        hop[0].ip_addr = NODE_B_ADDR;
+        hop[0].port = NODE_B_PORT;
+    }
 }
 
 void create_buffer(frame_t data, char *buffer, int buffsize) {
@@ -138,7 +154,7 @@ void p1() {
     int temp;
 
     while(1) {
-        printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n(3) STANDBY");
+        printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n(3) STANDBY\n");
         scanf("%d", &temp);
         if (temp == 1) {
             data_input.function = FUNC_SEND;
@@ -157,6 +173,29 @@ void p1() {
             if (temp == 3) {
                 data_input.destination = NODE_D_ID;
             }
+
+            // check if the destination node is in hop
+            for (int i=0; i<HOP_SIZE; i++) {
+                // if the destination node is in hop, send the message
+                if (data_input.destination == hop[i].id) {
+                    printf("Node is in hop.\n");
+                    flag_found = 1;
+                    break;
+                }
+            }
+            // if the destination node is not in hop, find a route to it
+            if (flag_found == 0) {
+                for (int i=0; i<HOP_SIZE; i++) {
+                    int buffsize = 4;
+                    char buffer[buffsize];
+
+                    frame_t data_find_route = data_input;
+                    data_find_route.function = FUNC_FIND;
+
+                    create_buffer(data_find_route, buffer, buffsize);
+                    send_to_node(hop[i], buffer, buffsize, 0);
+                }
+            }
         }
         if (temp == 2) {
             data_input.function = FUNC_SHDW;
@@ -166,31 +205,9 @@ void p1() {
                 while (quit_standby != 'q') {
                     scanf("%c", &quit_standby);
                 }
+                quit_standby = 0;
                 return true;
             });
-        }
-
-        // check if the destination node is in hop
-        for (int i=0; i<HOP_SIZE; i++) {
-            // if the destination node is in hop, send the message
-            if (data_input.destination == hop[i].id) {
-                printf("Node is in hop.\n");
-                flag_found = 1;
-                break;
-            }
-        }
-        // if the destination node is not in hop, find a route to it
-        if (flag_found == 0) {
-            for (int i=0; i<HOP_SIZE; i++) {
-                int buffsize = 4;
-                char buffer[buffsize];
-
-                frame_t data_find_route = data_input;
-                data_find_route.function = FUNC_FIND;
-
-                create_buffer(data_find_route, buffer, buffsize);
-                send_to_node(hop[i], buffer, buffsize, 0);
-            }
         }
     }
 }
