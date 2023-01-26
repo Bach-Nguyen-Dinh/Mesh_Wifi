@@ -2,6 +2,8 @@
 #include <winsock2.h>
 #include <thread>
 #include <chrono>
+#include <mutex>
+#include <condition_variable>
 
 #pragma commnet(lib, "ws2_32.lib")
 
@@ -11,6 +13,7 @@
 #define FUNC_SHDW 83
 #define FUNC_FIND 84
 #define FUNC_FOUND 85
+#define FUNC_STBY 86
 
 #define NODE_A_ID 90
 #define NODE_A_ADDR "192.168.55.106"
@@ -52,6 +55,8 @@ hop_list_t hop[HOP_SIZE];
 
 int flag_recv = 0;
 int flag_found = 0;
+
+char quit_standby = 0;
 
 // =================================================== Define Function ====================================================
 void create_hop() {
@@ -123,11 +128,9 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
 
 // =================================================== Thread Function ====================================================
 void p1() {
-    create_hop();
-
-    if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0) {
-		printf("Failed. Error Code : %d\n", WSAGetLastError());
-	}
+    std::condition_variable cv;
+    std::mutex mt;
+    std::unique_lock<std::mutex> lck(mt);
 
     frame_t data_input;
     data_input.source = NODE_ID;
@@ -135,7 +138,7 @@ void p1() {
     int temp;
 
     while(1) {
-        printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n");
+        printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n(3) STANDBY");
         scanf("%d", &temp);
         if (temp == 1) {
             data_input.function = FUNC_SEND;
@@ -157,6 +160,14 @@ void p1() {
         }
         if (temp == 2) {
             data_input.function = FUNC_SHDW;
+        }
+        if (temp == 3) {
+            cv.wait(lck, [](){
+                while (quit_standby != 'q') {
+                    scanf("%c", &quit_standby);
+                }
+                return true;
+            });
         }
 
         // check if the destination node is in hop
@@ -257,6 +268,12 @@ void p3() {
 
 // ===================================================== Main Program =====================================================
 int main() {
+    create_hop();
+
+    if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0) {
+		printf("Failed. Error Code : %d\n", WSAGetLastError());
+	}
+
     std::thread t1 = std::thread(p1);
     std::thread t3 = std::thread(p3);
 
