@@ -29,7 +29,7 @@
 #define NODE_D_PORT 8080
 
 #define HOP_SIZE 1
-#define NODE_ID NODE_A_ID
+#define NODE_ID NODE_B_ID
 
 // =================================================== Define Structure ==================================================
 typedef struct FRAME{
@@ -60,7 +60,7 @@ void create_hop() {
     hop[0].port = NODE_B_PORT;
 }
 
-char *create_buffer(frame_t data) {
+void create_buffer(frame_t data, char *buffer, int buffsize) {
     char char_arr[4];
     char temp[1];
 
@@ -77,16 +77,20 @@ char *create_buffer(frame_t data) {
     char_arr[3] = temp[0];
 
     char_arr[sizeof(char_arr)] = '\0';
+}
 
-    return char_arr;
+frame_t read_buffer(char *buffer) {
+    frame_t frame;
+    frame.function = buffer[0];
+    frame.buffer = buffer[1];
+    frame.source = buffer[2];
+    frame.destination = buffer[3];
+    return frame;
 }
 
 void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     struct sockaddr_in server;
     SOCKET connectSocket;
-
-    int buffsize = 4;
-    char *buffer;
 
     connectSocket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -115,15 +119,6 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
         }
     }
 
-}
-
-frame_t read_buffer(char *buffer) {
-    frame_t frame;
-    frame.function = buffer[0];
-    frame.buffer = buffer[1];
-    frame.source = buffer[2];
-    frame.destination = buffer[3];
-    return frame;
 }
 
 // =================================================== Thread Function ====================================================
@@ -177,12 +172,12 @@ void p1() {
         if (flag_found == 0) {
             for (int i=0; i<HOP_SIZE; i++) {
                 int buffsize = 4;
-                char *buffer;
+                char buffer[buffsize];
 
                 frame_t data_find_route = data_input;
                 data_find_route.function = FUNC_FIND;
 
-                buffer = create_buffer(data_find_route);
+                create_buffer(data_find_route, buffer, buffsize);
                 send_to_node(hop[i], buffer, buffsize, 0);
             }
         }
@@ -216,7 +211,7 @@ void p3() {
     SOCKET listenSocket, clientSocket;
 
     int buffsize = 4;
-    char *buffer;
+    char buffer[buffsize];
 
     int flag_found = 0;
 
@@ -245,7 +240,7 @@ void p3() {
                     data_rep.source = NODE_ID;
                     data_rep.destination = data_recv.source;
 
-                    buffer = create_buffer(data_rep);
+                    create_buffer(data_rep, buffer, buffsize);
                     send(clientSocket, buffer, buffsize, 0);
                 }
             }
@@ -254,13 +249,11 @@ void p3() {
                     if (data_recv.source == hop[i].id) {
                         continue;
                     }
-                    int buffsize = 4;
-                    char *buffer;
 
                     frame_t data_find_route = data_recv;
                     data_find_route.function = FUNC_FIND;
 
-                    buffer = create_buffer(data_find_route);
+                    create_buffer(data_find_route, buffer, buffsize);
                     send_to_node(hop[i], buffer, buffsize, &flag_found);
 
                     if (flag_found) {
@@ -271,7 +264,7 @@ void p3() {
                         data_rep.source = NODE_ID;
                         data_rep.destination = data_recv.source;
 
-                        buffer = create_buffer(data_rep);
+                        create_buffer(data_rep, buffer, buffsize);
                         send(clientSocket, buffer, buffsize, 0);
                         
                         break;
