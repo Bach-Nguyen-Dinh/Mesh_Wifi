@@ -1,58 +1,112 @@
 #include <stdio.h>
 #include <winsock2.h>
 #include <thread>
+#include <mutex>
+#include <chrono>
 
 #pragma commnet(lib, "ws2_32.lib")
+
+#define DEFAULT_BUFLEN 512
 
 #define host_A_addr "192.168.55.112"
 #define host_A_port 8080
 
-#define host_B_addr "192.168.55.110"
-#define host_B_port 8080
+#define host_B_addr "192.168.55.109"
+#define host_B_port 8888
 
-SOCKET s, recv_s, connect_s;
-struct sockaddr_in host_A, host_B, host;
+std::mutex mt;
 
-void accept_host() {
-    printf("Waiting for incoming connections ... ");
-    int c = sizeof(struct sockaddr_in);
-    if ((recv_s = accept(s, (struct sockaddr *)&host, &c)) == INVALID_SOCKET) {
-        printf("Accept failed. Error code : %d\n", WSAGetLastError());
-    }
-    else {
-        printf("Connection accepted.\n");
+void delay_ms(int t) {
+    auto start = std::chrono::high_resolution_clock::now();
+    auto stop = std::chrono::high_resolution_clock::now();
+
+    while ((stop - start) < static_cast<std::chrono::milliseconds>(t)) {
+        stop = std::chrono::high_resolution_clock::now();
     }
 }
-void connect_host() {
+
+void p_server() {
+    struct sockaddr_in thisHost;
+
+    SOCKET listenSocket, clientSocket;
+
+    char recvbuf[DEFAULT_BUFLEN];
+    int recvbuflen = DEFAULT_BUFLEN;
+
+    printf("Creating Socket ... ");
+	if ((listenSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+		printf("Could not create socket. Error code : %d\n", WSAGetLastError());
+	}
+    else {
+	    printf("Socket created.\n");
+    }
+
+    thisHost.sin_family = AF_INET;
+    thisHost.sin_addr.s_addr = inet_addr(host_A_addr);
+    thisHost.sin_port = htons(host_A_port);
+
+    printf("Binding ... ");
+    if (bind(listenSocket, (struct sockaddr *)&thisHost, sizeof(thisHost)) == SOCKET_ERROR) {
+        printf("Bind failed. Error code : %d\n", WSAGetLastError());
+    }
+    else {
+        printf("Bind done.\n");
+    }
+
+    if (listen(listenSocket, SOMAXCONN) == SOCKET_ERROR) {
+        printf("Listen failed. Error code : %d\n", WSAGetLastError());
+    }
+
+    while(1) {
+        clientSocket = accept(listenSocket, NULL, NULL);
+        if (clientSocket == INVALID_SOCKET) {
+            printf("Listen failed. Error code: %d\n", WSAGetLastError());
+        }
+        else {
+            printf("Accepted.\n");
+            const char *msg = "Hello, this is host A";
+            send(clientSocket, msg, strlen(msg), 0);
+        }
+    }
+}
+
+void p_client() {
+    struct sockaddr_in connectHost;
+    SOCKET connectSocket;
+
+    printf("Creating Socket ... ");
+	if ((connectSocket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+		printf("Could not create socket. Error code : %d\n", WSAGetLastError());
+	}
+    else {
+	    printf("Socket created.\n");
+    }
+
+    connectHost.sin_family = AF_INET;
+    connectHost.sin_addr.s_addr = inet_addr(host_B_addr);
+    connectHost.sin_port = htons(host_B_port);
+
     printf("Connecting to server ... ");
-    if (connect(connect_s, (struct sockaddr *)&host_B, sizeof(host_B)) < 0) {
+    if (connect(connectSocket, (struct sockaddr *)&connectHost, sizeof(connectHost)) < 0) {
         printf("Connect failed. Error code : %d\n", WSAGetLastError());
     }
     else {
         printf("Connected.\n");
-        const char *msg = "Hello, this is host A";
-        send(connect_s, msg, strlen(msg), 0);
+    }
+
+    const char *msg = "Hello server, this is client\n";
+    while(1) {
+        send(connectSocket, msg, strlen(msg), 0);
+        // delay_ms(500);
     }
 }
 
 int main() {
-    WSADATA wsa;
-    
-    char other_host_msg[2000];
-    int recv_size;
-
-    std::thread t1, t2;
-
-    host_A.sin_family = AF_INET;
-    host_A.sin_addr.s_addr = inet_addr(host_A_addr);
-    host_A.sin_port = htons(host_A_port);
-
-    host_B.sin_family = AF_INET;
-    host_B.sin_addr.s_addr = inet_addr(host_B_addr);
-    host_B.sin_port = htons(host_B_port);
+    std::thread t_server, t_client;
+    WSADATA wsaData;
 
     printf("Initialising Socket ... ");
-	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
 		printf("Failed. Error Code : %d\n", WSAGetLastError());
 		return 1;
 	}
@@ -60,50 +114,11 @@ int main() {
 	    printf("Initialised.\n");
     }
 
-    printf("Creating Socket ... ");
-	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-		printf("Could not create socket. Error code : %d\n", WSAGetLastError());
-        return 1;
-	}
-    else {
-	    printf("Socket created.\n");
-    }
-    
-    printf("Binding ... ");
-    if (bind(s, (struct sockaddr *)&host_A, sizeof(host_A)) == SOCKET_ERROR) {
-        printf("Bind failed. Error code : %d\n", WSAGetLastError());
-        return 1;
-    }
-    else {
-        printf("Bind done.\n");
-    }
+    t_server = std::thread(p_server);
+    t_client = std::thread(p_client);
 
-    listen(s, 3);
-
-    t1 = std::thread(accept_host);
-    t2 = std::thread(connect_host);
-    
-    if ((recv_size = recv(recv_s, other_host_msg, sizeof(other_host_msg), 0)) == SOCKET_ERROR) {
-        printf("Receive failed. Error code: %d\n", WSAGetLastError());
-        return 1;
-    }
-    else {
-        printf("Message received.\n");
-        other_host_msg[recv_size] = '\0';
-        puts(other_host_msg);
-    }
-
-    t1.join();
-    t2.join();
-
-    printf("Closing socket ... ");
-    if (closesocket(s) < 0) {
-        printf("Could not close socket. Error code: %d\n", WSAGetLastError());
-    }
-    else {
-        printf("Socket closed.\n");
-    }
-	WSACleanup();
+    t_server.join();
+    t_client.join();
 
     return 0;
 }
