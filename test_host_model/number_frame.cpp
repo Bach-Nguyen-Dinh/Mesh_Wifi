@@ -16,7 +16,7 @@
 #define FUNC_STBY 86
 
 #define NODE_A_ID 90
-#define NODE_A_ADDR "192.168.55.106"
+#define NODE_A_ADDR "192.168.55.103"
 #define NODE_A_PORT 8080
 
 #define NODE_B_ID 91
@@ -24,7 +24,7 @@
 #define NODE_B_PORT 8080
 
 #define NODE_C_ID 92
-#define NODE_C_ADDR "192.168.55.111"
+#define NODE_C_ADDR "192.168.55.106"
 #define NODE_C_PORT 8080
 
 #define NODE_D_ID 93
@@ -121,7 +121,15 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     server.sin_addr.s_addr = inet_addr(dst.ip_addr);
     server.sin_port = htons(dst.port);
 
-    connect(connectSocket, (const struct sockaddr *)&server, sizeof(server));
+    printf("Connecting to NODE_ID_%d . . . ", dst.id);
+    if (connect(connectSocket, (const struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
+        printf("Connect faile. Error code : %d\n", WSAGetLastError());
+    }
+    else {
+        printf("Connected.\n");
+    }
+
+    printf("Sending request to NODE_ID_%d\n", dst.id);
     send(connectSocket, buffer, buffsize, 0);
 
     int out_of_time = 0;
@@ -130,6 +138,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
         auto interval = std::chrono::high_resolution_clock::now() -  start;
         if (interval >= std::chrono::seconds(3)) {
             out_of_time = 1;
+            printf("Out of time.\n");
             break;
         }
     }
@@ -222,6 +231,7 @@ void p1() {
                     frame_t data_find_route = data_input;
                     data_find_route.function = FUNC_FIND;
 
+                    printf("Asking NODE_ID_%i\n", hop[i].id);
                     create_buffer(data_find_route, buffer, buffsize);
                     send_to_node(hop[i], buffer, buffsize, 0);
                 }
@@ -258,44 +268,31 @@ void p3() {
     server.sin_addr.s_addr = inet_addr(NODE_ADDR);
     server.sin_port = htons(NODE_PORT);
 
-    bind(listenSocket, (struct sockaddr *)&server, sizeof(server));
+    if (bind(listenSocket, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
+        printf("Bind failed. Error code : %d\n", WSAGetLastError());
+    }
     listen(listenSocket, SOMAXCONN);
     printf("\t\t\t\t\t\t\t");
     printf("Server is running . . .\n");
 
     while(1) {
-        if (recv(clientSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
+        if ((clientSocket = accept(listenSocket, NULL, NULL)) = SOCKET_ERROR) {
             continue;
         }
         else {
-            frame_t data_recv = read_buffer(buffer);
+            printf("\t\t\t\t\t\t\t");
+            printf("Server accepted new connection.\n");
 
-            if (data_recv.destination == NODE_ID) {
-                if (data_recv.function == FUNC_FIND) {
-                    frame_t data_rep;
-
-                    data_rep.function = FUNC_FOUND;
-                    data_rep.buffer = data_recv.buffer;
-                    data_rep.source = NODE_ID;
-                    data_rep.destination = data_recv.source;
-
-                    create_buffer(data_rep, buffer, buffsize);
-                    send(clientSocket, buffer, buffsize, 0);
-                }
+            if (recv(clientSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
+                continue;
             }
             else {
-                for (int i=0; i<HOP_SIZE; i++) {
-                    if (data_recv.source == hop[i].id) {
-                        continue;
-                    }
+                printf("\t\t\t\t\t\t\t");
+                printf("Server received a message.\n");
+                frame_t data_recv = read_buffer(buffer);
 
-                    frame_t data_find_route = data_recv;
-                    data_find_route.function = FUNC_FIND;
-
-                    create_buffer(data_find_route, buffer, buffsize);
-                    send_to_node(hop[i], buffer, buffsize, &flag_found);
-
-                    if (flag_found) {
+                if (data_recv.destination == NODE_ID) {
+                    if (data_recv.function == FUNC_FIND) {
                         frame_t data_rep;
 
                         data_rep.function = FUNC_FOUND;
@@ -305,8 +302,37 @@ void p3() {
 
                         create_buffer(data_rep, buffer, buffsize);
                         send(clientSocket, buffer, buffsize, 0);
-                        
-                        break;
+                        printf("\t\t\t\t\t\t\t");
+                        printf("Server responsed the message.\n");
+                    }
+                }
+                else {
+                    for (int i=0; i<HOP_SIZE; i++) {
+                        if (data_recv.source == hop[i].id) {
+                            continue;
+                        }
+
+                        frame_t data_find_route = data_recv;
+                        data_find_route.function = FUNC_FIND;
+
+                        create_buffer(data_find_route, buffer, buffsize);
+                        send_to_node(hop[i], buffer, buffsize, &flag_found);
+
+                        if (flag_found) {
+                            frame_t data_rep;
+
+                            data_rep.function = FUNC_FOUND;
+                            data_rep.buffer = data_recv.buffer;
+                            data_rep.source = NODE_ID;
+                            data_rep.destination = data_recv.source;
+
+                            create_buffer(data_rep, buffer, buffsize);
+                            send(clientSocket, buffer, buffsize, 0);
+                            printf("\t\t\t\t\t\t\t");
+                            printf("Server responsed the message.\n");
+                            
+                            break;
+                        }
                     }
                 }
             }
