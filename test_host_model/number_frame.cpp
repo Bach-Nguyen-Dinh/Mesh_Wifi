@@ -8,9 +8,9 @@
 #pragma commnet(lib, "ws2_32.lib")
 
 #define FUNC_SEND 80
-#define FUNC_RECV 81
-#define FUNC_TNFR 82
-#define FUNC_SHDW 83
+// #define FUNC_RECV 81
+// #define FUNC_TNFR 82
+// #define FUNC_SHDW 83
 #define FUNC_FIND 84
 #define FUNC_FOUND 85
 #define FUNC_STBY 86
@@ -32,6 +32,8 @@
 #define NODE_D_PORT 8080
 
 #define NODE_ID NODE_B_ID
+#define NODE_ADDR NODE_B_ADDR
+#define NODE_PORT NODE_B_PORT
 #define HOP_SIZE ((NODE_ID != NODE_B_ID)?1:2)
 
 // =================================================== Define Structure ==================================================
@@ -162,16 +164,44 @@ void p1() {
             printf("Enter a number: ");
             scanf("%d", &(data_input.buffer));
 
-            printf("Select destination:\n(1) B\n(2) C \n(3) D\n");
-            scanf("%d", &temp);
-            if (temp == 1) {
-                data_input.destination = NODE_B_ID;
+            if (NODE_ID == NODE_A_ID) {
+                printf("Select destination:\n(1) B\n(2) C \n(3) D\n");
+                scanf("%d", &temp);
+                if (temp == 1) {
+                    data_input.destination = NODE_B_ID;
+                }
+                if (temp == 2) {
+                    data_input.destination = NODE_C_ID;
+                }
+                if (temp == 3) {
+                    data_input.destination = NODE_D_ID;
+                }
             }
-            if (temp == 2) {
-                data_input.destination = NODE_C_ID;
+            if (NODE_ID == NODE_B_ID) {
+                printf("Select destination:\n(1) A\n(2) C \n(3) D\n");
+                scanf("%d", &temp);
+                if (temp == 1) {
+                    data_input.destination = NODE_A_ID;
+                }
+                if (temp == 2) {
+                    data_input.destination = NODE_C_ID;
+                }
+                if (temp == 3) {
+                    data_input.destination = NODE_D_ID;
+                }
             }
-            if (temp == 3) {
-                data_input.destination = NODE_D_ID;
+            if (NODE_ID == NODE_C_ID) {
+                printf("Select destination:\n(1) A\n(2) C \n(3) D\n");
+                scanf("%d", &temp);
+                if (temp == 1) {
+                    data_input.destination = NODE_A_ID;
+                }
+                if (temp == 2) {
+                    data_input.destination = NODE_B_ID;
+                }
+                if (temp == 3) {
+                    data_input.destination = NODE_D_ID;
+                }
             }
 
             // check if the destination node is in hop
@@ -198,7 +228,7 @@ void p1() {
             }
         }
         if (temp == 2) {
-            data_input.function = FUNC_SHDW;
+            exit(0);
         }
         if (temp == 3) {
             cv.wait(lck, [](){
@@ -225,11 +255,13 @@ void p3() {
     listenSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr(NODE_A_ADDR);
-    server.sin_port = htons(NODE_A_PORT);
+    server.sin_addr.s_addr = inet_addr(NODE_ADDR);
+    server.sin_port = htons(NODE_PORT);
 
     bind(listenSocket, (struct sockaddr *)&server, sizeof(server));
     listen(listenSocket, SOMAXCONN);
+    printf("\t\t\t\t\t\t\t");
+    printf("Server is running . . .\n");
 
     while(1) {
         if (recv(clientSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
