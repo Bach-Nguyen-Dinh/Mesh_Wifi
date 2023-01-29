@@ -13,7 +13,6 @@
 // #define FUNC_SHDW 83
 #define FUNC_FIND 84
 #define FUNC_FOUND 85
-#define FUNC_STBY 86
 
 #define NODE_A_ID 90
 #define NODE_A_ADDR "192.168.55.103"
@@ -121,36 +120,37 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     server.sin_addr.s_addr = inet_addr(dst.ip_addr);
     server.sin_port = htons(dst.port);
 
-    printf("Connecting to NODE_ID_%d . . . ", dst.id);
+    printf("Connecting to NODE_ID:%d . . . ", dst.id);
     if (connect(connectSocket, (const struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
         printf("Connect faile. Error code : %d\n", WSAGetLastError());
+        closesocket(connectSocket);
     }
     else {
         printf("Connected.\n");
-    }
 
-    printf("Sending request to NODE_ID_%d\n", dst.id);
-    send(connectSocket, buffer, buffsize, 0);
+        printf("Sending request to NODE_ID:%d.\n", dst.id);
+        send(connectSocket, buffer, buffsize, 0);
 
-    int out_of_time = 0;
-    auto start = std::chrono::high_resolution_clock::now();
-    while (recv(connectSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
-        auto interval = std::chrono::high_resolution_clock::now() -  start;
-        if (interval >= std::chrono::seconds(3)) {
-            out_of_time = 1;
-            printf("Out of time.\n");
-            break;
+        int out_of_time = 0;
+        auto start = std::chrono::high_resolution_clock::now();
+        while (recv(connectSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
+            auto interval = std::chrono::high_resolution_clock::now() -  start;
+            if (interval >= std::chrono::seconds(3)) {
+                out_of_time = 1;
+                printf("Out of time.\n");
+                break;
+            }
         }
-    }
-    if (!out_of_time) {
-        frame_t data_recv = read_buffer(buffer);
+        if (!out_of_time) {
+            frame_t data_recv = read_buffer(buffer);
 
-        if (data_recv.function == FUNC_FOUND) {
-            printf("Found.\n");
-            *flag = 1;
+            if (data_recv.function == FUNC_FOUND) {
+                printf("Found.\n");
+                *flag = 1;
+            }
         }
+        closesocket(connectSocket);
     }
-
 }
 
 // =================================================== Thread Function ====================================================
@@ -165,16 +165,16 @@ void p1() {
     int temp;
 
     while(1) {
-        printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n(3) STANDBY\n");
+        printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n");
         scanf("%d", &temp);
         if (temp == 1) {
             data_input.function = FUNC_SEND;
 
-            printf("Enter a number: ");
+            printf("\nEnter a number: ");
             scanf("%d", &(data_input.buffer));
 
             if (NODE_ID == NODE_A_ID) {
-                printf("Select destination:\n(1) B\n(2) C \n(3) D\n");
+                printf("\nSelect destination:\n(1) B\n(2) C \n(3) D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_B_ID;
@@ -187,7 +187,7 @@ void p1() {
                 }
             }
             if (NODE_ID == NODE_B_ID) {
-                printf("Select destination:\n(1) A\n(2) C \n(3) D\n");
+                printf("\nSelect destination:\n(1) A\n(2) C \n(3) D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_A_ID;
@@ -200,7 +200,7 @@ void p1() {
                 }
             }
             if (NODE_ID == NODE_C_ID) {
-                printf("Select destination:\n(1) A\n(2) C \n(3) D\n");
+                printf("\nSelect destination:\n(1) A\n(2) C \n(3) D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_A_ID;
@@ -231,31 +231,32 @@ void p1() {
                     frame_t data_find_route = data_input;
                     data_find_route.function = FUNC_FIND;
 
-                    printf("Asking NODE_ID_%i\n", hop[i].id);
+                    printf("\nAsking NODE_ID:%i.\n", hop[i].id);
                     create_buffer(data_find_route, buffer, buffsize);
-                    send_to_node(hop[i], buffer, buffsize, 0);
+                    send_to_node(hop[i], buffer, buffsize, &flag_found);
+
+                    if (flag_found == 1) {
+                        printf("\nFound.\n\n");
+                        break;
+                    }
                 }
+            }
+
+            if (flag_found == 0) {
+                printf("\nCan not send to NODE_ID:%d.\n\n", data_input.destination);
             }
         }
         if (temp == 2) {
             exit(0);
         }
-        if (temp == 3) {
-            cv.wait(lck, [](){
-                while (quit_standby != 'q') {
-                    scanf("%c", &quit_standby);
-                }
-                quit_standby = 0;
-                return true;
-            });
-        }
     }
 }
 
 void p3() {
-    struct sockaddr_in server;
+    struct sockaddr_in server, client;
     
-    SOCKET listenSocket, clientSocket;
+    SOCKET listenSocket = INVALID_SOCKET;
+    SOCKET clientSocket = INVALID_SOCKET;
 
     int buffsize = 4;
     char buffer[buffsize];
@@ -269,24 +270,22 @@ void p3() {
     server.sin_port = htons(NODE_PORT);
 
     if (bind(listenSocket, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
+        printf("\t\t\t\t\t\t\t");
         printf("Bind failed. Error code : %d\n", WSAGetLastError());
     }
     listen(listenSocket, SOMAXCONN);
     printf("\t\t\t\t\t\t\t");
     printf("Server is running . . .\n");
 
-    while(1) {
-        if ((clientSocket = accept(listenSocket, NULL, NULL)) = SOCKET_ERROR) {
-            continue;
+	while( (clientSocket = accept(listenSocket , NULL, NULL)) != INVALID_SOCKET )
+	{
+		puts("Connection accepted");
+
+        if (recv(clientSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
+            printf("\t\t\t\t\t\t\t");
+            printf("Receive failed. Error code : %d\n", WSAGetLastError());
         }
         else {
-            printf("\t\t\t\t\t\t\t");
-            printf("Server accepted new connection.\n");
-
-            if (recv(clientSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
-                continue;
-            }
-            else {
                 printf("\t\t\t\t\t\t\t");
                 printf("Server received a message.\n");
                 frame_t data_recv = read_buffer(buffer);
@@ -302,6 +301,7 @@ void p3() {
 
                         create_buffer(data_rep, buffer, buffsize);
                         send(clientSocket, buffer, buffsize, 0);
+                        closesocket(clientSocket);
                         printf("\t\t\t\t\t\t\t");
                         printf("Server responsed the message.\n");
                     }
@@ -328,6 +328,74 @@ void p3() {
 
                             create_buffer(data_rep, buffer, buffsize);
                             send(clientSocket, buffer, buffsize, 0);
+                            closesocket(clientSocket);
+                            printf("\t\t\t\t\t\t\t");
+                            printf("Server responsed the message.\n");
+                            
+                            break;
+                        }
+                    }
+                }
+            }
+	}
+
+    while(1) {
+        if ((clientSocket = accept(listenSocket, NULL, NULL)) == INVALID_SOCKET) {
+            printf("\t\t\t\t\t\t\t");
+            printf("No new connection.\n");
+        }
+        else {
+            printf("\t\t\t\t\t\t\t");
+            printf("Server accepted new connection.\n");
+
+            if (recv(clientSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
+                printf("\t\t\t\t\t\t\t");
+                printf("Receive failed. Error code : %d\n", WSAGetLastError());
+            }
+            else {
+                printf("\t\t\t\t\t\t\t");
+                printf("Server received a message.\n");
+                frame_t data_recv = read_buffer(buffer);
+
+                if (data_recv.destination == NODE_ID) {
+                    if (data_recv.function == FUNC_FIND) {
+                        frame_t data_rep;
+
+                        data_rep.function = FUNC_FOUND;
+                        data_rep.buffer = data_recv.buffer;
+                        data_rep.source = NODE_ID;
+                        data_rep.destination = data_recv.source;
+
+                        create_buffer(data_rep, buffer, buffsize);
+                        send(clientSocket, buffer, buffsize, 0);
+                        closesocket(clientSocket);
+                        printf("\t\t\t\t\t\t\t");
+                        printf("Server responsed the message.\n");
+                    }
+                }
+                else {
+                    for (int i=0; i<HOP_SIZE; i++) {
+                        if (data_recv.source == hop[i].id) {
+                            continue;
+                        }
+
+                        frame_t data_find_route = data_recv;
+                        data_find_route.function = FUNC_FIND;
+
+                        create_buffer(data_find_route, buffer, buffsize);
+                        send_to_node(hop[i], buffer, buffsize, &flag_found);
+
+                        if (flag_found) {
+                            frame_t data_rep;
+
+                            data_rep.function = FUNC_FOUND;
+                            data_rep.buffer = data_recv.buffer;
+                            data_rep.source = NODE_ID;
+                            data_rep.destination = data_recv.source;
+
+                            create_buffer(data_rep, buffer, buffsize);
+                            send(clientSocket, buffer, buffsize, 0);
+                            closesocket(clientSocket);
                             printf("\t\t\t\t\t\t\t");
                             printf("Server responsed the message.\n");
                             
@@ -340,6 +408,12 @@ void p3() {
     }
 }
 
+void p_test() {
+    while (1) {
+        printf(".\n");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
 
 // ===================================================== Main Program =====================================================
 int main() {
@@ -351,9 +425,11 @@ int main() {
 
     std::thread t1 = std::thread(p1);
     std::thread t3 = std::thread(p3);
+    // std::thread t_test = std::thread(p_test);
 
     t1.join();
     t3.join();
+    // t_test.join();
 
     return 0;
 }
