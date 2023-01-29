@@ -309,28 +309,29 @@ void p3() {
                         if (data_recv.source == hop[i].id) {
                             continue;
                         }
+                        else {
+                            frame_t data_find_route = data_recv;
+                            data_find_route.function = FUNC_FIND;
 
-                        frame_t data_find_route = data_recv;
-                        data_find_route.function = FUNC_FIND;
+                            create_buffer(data_find_route, buffer, buffsize);
+                            send_to_node(hop[i], buffer, buffsize, &flag_found);
 
-                        create_buffer(data_find_route, buffer, buffsize);
-                        send_to_node(hop[i], buffer, buffsize, &flag_found);
+                            if (flag_found) {
+                                frame_t data_rep;
 
-                        if (flag_found) {
-                            frame_t data_rep;
+                                data_rep.function = FUNC_FOUND;
+                                data_rep.buffer = data_recv.buffer;
+                                data_rep.source = NODE_ID;
+                                data_rep.destination = data_recv.source;
 
-                            data_rep.function = FUNC_FOUND;
-                            data_rep.buffer = data_recv.buffer;
-                            data_rep.source = NODE_ID;
-                            data_rep.destination = data_recv.source;
-
-                            create_buffer(data_rep, buffer, buffsize);
-                            send(clientSocket, buffer, buffsize, 0);
-                            closesocket(clientSocket);
-                            printf("\t\t\t\t\t\t\t");
-                            printf("Server responsed the message.\n");
-                            
-                            break;
+                                create_buffer(data_rep, buffer, buffsize);
+                                send(clientSocket, buffer, buffsize, 0);
+                                closesocket(clientSocket);
+                                printf("\t\t\t\t\t\t\t");
+                                printf("Server responsed the message.\n");
+                                
+                                break;
+                            }
                         }
                     }
                 }
@@ -406,12 +407,12 @@ void p3() {
     // }
 }
 
-void p_test() {
-    while (1) {
-        printf(".\n");
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-}
+// void p_test() {
+//     while (1) {
+//         printf(".\n");
+//         std::this_thread::sleep_for(std::chrono::seconds(1));
+//     }
+// }
 
 // ===================================================== Main Program =====================================================
 int main() {
