@@ -126,25 +126,54 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     else {
         printf("Connected.\n");
 
-        printf("Sending request to NODE_ID:%d.\n", dst.id);
-        send(connectSocket, buffer, buffsize, 0);
-
-        int out_of_time = 0;
-        auto start = std::chrono::high_resolution_clock::now();
-        while (recv(connectSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
-            auto interval = std::chrono::high_resolution_clock::now() -  start;
-            if (interval >= std::chrono::seconds(3)) {
-                out_of_time = 1;
-                printf("Out of time.\n");
-                break;
-            }
+        printf("Sending request to NODE_ID:%d . . . ", dst.id);
+        if ((send(connectSocket, buffer, buffsize, 0)) == SOCKET_ERROR) {
+            printf("Failed.\n");
+            closesocket(connectSocket);
         }
-        if (!out_of_time) {
-            frame_t data_recv = read_buffer(buffer);
+        else {
+            printf("Sent.\n");
 
-            if (data_recv.function == FUNC_FOUND) {
-                printf("Found.\n");
-                *flag = 1;
+            // Waiting for the response message
+            int result;
+            int out_of_time = 0;
+            auto start = std::chrono::high_resolution_clock::now();
+
+            do {
+                result = recv(connectSocket, buffer, buffsize, 0);
+                if (result > 0) {
+                    printf("Bytes received: %d\n", result);
+                }
+                else if (result == 0) {
+                    printf("Connection closed.\n");
+                }
+                else {
+                    printf("Receive failed. Error code: %d.\n", WSAGetLastError());
+                }
+
+                auto interval = std::chrono::high_resolution_clock::now() -  start;
+                if (interval >= std::chrono::seconds(3)) {
+                    out_of_time = 1;
+                    printf("Out of time.\n");
+                    break;
+                }                
+            } while (result > 0);
+
+            // while (recv(connectSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
+            //     auto interval = std::chrono::high_resolution_clock::now() -  start;
+            //     if (interval >= std::chrono::seconds(3)) {
+            //         out_of_time = 1;
+            //         printf("Out of time.\n");
+            //         break;
+            //     }
+            // }
+            if (!out_of_time) {
+                frame_t data_recv = read_buffer(buffer);
+
+                if (data_recv.function == FUNC_FOUND) {
+                    printf("Found.\n");
+                    *flag = 1;
+                }
             }
         }
         closesocket(connectSocket);
@@ -153,10 +182,6 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
 
 // =================================================== Thread Function ====================================================
 void p1() {
-    // std::condition_variable cv;
-    // std::mutex mt;
-    // std::unique_lock<std::mutex> lck(mt);
-
     frame_t data_input;
     data_input.source = NODE_ID;
 
@@ -284,26 +309,26 @@ void p3() {
             printf("Receive failed. Error code : %d\n", WSAGetLastError());
         }
         else {
-                printf("\t\t\t\t\t\t\t");
-                printf("Server received a message.\n");
-                frame_t data_recv = read_buffer(buffer);
+            printf("\t\t\t\t\t\t\t");
+            printf("Server received a message.\n");
+            frame_t data_recv = read_buffer(buffer);
 
-                if (data_recv.destination == NODE_ID) {
-                    if (data_recv.function == FUNC_FIND) {
-                        frame_t data_rep;
+            if (data_recv.destination == NODE_ID) {
+                if (data_recv.function == FUNC_FIND) {
+                    frame_t data_rep;
 
-                        data_rep.function = FUNC_FOUND;
-                        data_rep.buffer = data_recv.buffer;
-                        data_rep.source = NODE_ID;
-                        data_rep.destination = data_recv.source;
+                    data_rep.function = FUNC_FOUND;
+                    data_rep.buffer = data_recv.buffer;
+                    data_rep.source = NODE_ID;
+                    data_rep.destination = data_recv.source;
 
-                        create_buffer(data_rep, buffer, buffsize);
-                        send(clientSocket, buffer, buffsize, 0);
-                        closesocket(clientSocket);
-                        printf("\t\t\t\t\t\t\t");
-                        printf("Server responsed the message.\n");
-                    }
+                    create_buffer(data_rep, buffer, buffsize);
+                    send(clientSocket, buffer, buffsize, 0);
+                    closesocket(clientSocket);
+                    printf("\t\t\t\t\t\t\t");
+                    printf("Server responsed the message.\n");
                 }
+            }
                 else {
                     for (int i=0; i<HOP_SIZE; i++) {
                         if (data_recv.source == hop[i].id) {
