@@ -15,20 +15,12 @@
 #define FUNC_FOUND 85
 
 #define NODE_A_ID 90
-#define NODE_A_ADDR "192.168.24.190"
+#define NODE_A_ADDR "192.168.55.103"
 #define NODE_A_PORT 8080
 
 #define NODE_B_ID 91
-#define NODE_B_ADDR "192.168.24.191"
+#define NODE_B_ADDR "192.168.55.114"
 #define NODE_B_PORT 8080
-
-// #define NODE_A_ID 90
-// #define NODE_A_ADDR "192.168.55.103"
-// #define NODE_A_PORT 8080
-
-// #define NODE_B_ID 91
-// #define NODE_B_ADDR "192.168.55.114"
-// #define NODE_B_PORT 8080
 
 #define NODE_C_ID 92
 #define NODE_C_ADDR "192.168.55.106"
