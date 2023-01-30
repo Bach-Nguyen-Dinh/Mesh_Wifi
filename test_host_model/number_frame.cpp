@@ -167,14 +167,6 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
                 }                
             } while (result > 0);
 
-            // while (recv(connectSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
-            //     auto interval = std::chrono::high_resolution_clock::now() -  start;
-            //     if (interval >= std::chrono::seconds(3)) {
-            //         out_of_time = 1;
-            //         printf("Out of time.\n");
-            //         break;
-            //     }
-            // }
             if (!out_of_time) {
                 frame_t data_recv = read_buffer(buffer);
 
@@ -380,82 +372,7 @@ void p3() {
             closesocket(clientSocket);
         }
     }
-
-    // while(1) {
-    //     if ((clientSocket = accept(listenSocket, NULL, NULL)) == INVALID_SOCKET) {
-    //         printf("\t\t\t\t\t\t\t");
-    //         printf("No new connection.\n");
-    //     }
-    //     else {
-    //         printf("\t\t\t\t\t\t\t");
-    //         printf("Server accepted new connection.\n");
-
-    //         if (recv(clientSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
-    //             printf("\t\t\t\t\t\t\t");
-    //             printf("Receive failed. Error code : %d\n", WSAGetLastError());
-    //         }
-    //         else {
-    //             printf("\t\t\t\t\t\t\t");
-    //             printf("Server received a message.\n");
-    //             frame_t data_recv = read_buffer(buffer);
-
-    //             if (data_recv.destination == NODE_ID) {
-    //                 if (data_recv.function == FUNC_FIND) {
-    //                     frame_t data_rep;
-
-    //                     data_rep.function = FUNC_FOUND;
-    //                     data_rep.buffer = data_recv.buffer;
-    //                     data_rep.source = NODE_ID;
-    //                     data_rep.destination = data_recv.source;
-
-    //                     create_buffer(data_rep, buffer, buffsize);
-    //                     send(clientSocket, buffer, buffsize, 0);
-    //                     closesocket(clientSocket);
-    //                     printf("\t\t\t\t\t\t\t");
-    //                     printf("Server responsed the message.\n");
-    //                 }
-    //             }
-    //             else {
-    //                 for (int i=0; i<HOP_SIZE; i++) {
-    //                     if (data_recv.source == hop[i].id) {
-    //                         continue;
-    //                     }
-
-    //                     frame_t data_find_route = data_recv;
-    //                     data_find_route.function = FUNC_FIND;
-
-    //                     create_buffer(data_find_route, buffer, buffsize);
-    //                     send_to_node(hop[i], buffer, buffsize, &flag_found);
-
-    //                     if (flag_found) {
-    //                         frame_t data_rep;
-
-    //                         data_rep.function = FUNC_FOUND;
-    //                         data_rep.buffer = data_recv.buffer;
-    //                         data_rep.source = NODE_ID;
-    //                         data_rep.destination = data_recv.source;
-
-    //                         create_buffer(data_rep, buffer, buffsize);
-    //                         send(clientSocket, buffer, buffsize, 0);
-    //                         closesocket(clientSocket);
-    //                         printf("\t\t\t\t\t\t\t");
-    //                         printf("Server responsed the message.\n");
-                            
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
 }
-
-// void p_test() {
-//     while (1) {
-//         printf(".\n");
-//         std::this_thread::sleep_for(std::chrono::seconds(1));
-//     }
-// }
 
 // ===================================================== Main Program =====================================================
 int main() {
@@ -467,11 +384,9 @@ int main() {
 
     std::thread t1 = std::thread(p1);
     std::thread t3 = std::thread(p3);
-    // std::thread t_test = std::thread(p_test);
 
     t1.join();
     t3.join();
-    // t_test.join();
 
     return 0;
 }
