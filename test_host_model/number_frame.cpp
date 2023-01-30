@@ -15,12 +15,20 @@
 #define FUNC_FOUND 85
 
 #define NODE_A_ID 90
-#define NODE_A_ADDR "192.168.55.103"
+#define NODE_A_ADDR "192.168.24.190"
 #define NODE_A_PORT 8080
 
 #define NODE_B_ID 91
-#define NODE_B_ADDR "192.168.55.114"
+#define NODE_B_ADDR "192.168.24.191"
 #define NODE_B_PORT 8080
+
+// #define NODE_A_ID 90
+// #define NODE_A_ADDR "192.168.55.103"
+// #define NODE_A_PORT 8080
+
+// #define NODE_B_ID 91
+// #define NODE_B_ADDR "192.168.55.114"
+// #define NODE_B_PORT 8080
 
 #define NODE_C_ID 92
 #define NODE_C_ADDR "192.168.55.106"
@@ -55,7 +63,7 @@ WSADATA wsaDATA;
 hop_list_t hop[HOP_SIZE];
 
 int flag_recv = 0;
-int flag_found = 0;
+// int flag_found = 0;
 
 // =================================================== Define Function ====================================================
 void create_hop() {
@@ -188,6 +196,7 @@ void p1() {
     int temp;
 
     while(1) {
+        int flag_found = 0;
         printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n");
         scanf("%d", &temp);
         if (temp == 1) {
@@ -263,9 +272,6 @@ void p1() {
                         break;
                     }
                 }
-            }
-
-            if (flag_found == 0) {
                 printf("\nCan not send to NODE_ID:%d.\n\n", data_input.destination);
             }
         }
@@ -285,6 +291,7 @@ void p3() {
     char buffer[buffsize];
 
     int flag_found = 0;
+    int result;
 
     listenSocket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -296,72 +303,83 @@ void p3() {
         printf("\t\t\t\t\t\t\t");
         printf("Bind failed. Error code : %d\n", WSAGetLastError());
     }
-    listen(listenSocket, SOMAXCONN);
-    printf("\t\t\t\t\t\t\t");
-    printf("Server is running . . .\n");
+    else {
+        listen(listenSocket, SOMAXCONN);
+        printf("\t\t\t\t\t\t\t");
+        printf("Server is running . . .\n");
 
-	while((clientSocket = accept(listenSocket , NULL, NULL)) != INVALID_SOCKET)
-	{
-		puts("Connection accepted");
-
-        if (recv(clientSocket, buffer, buffsize, 0) == SOCKET_ERROR) {
+        while((clientSocket = accept(listenSocket , NULL, NULL)) != INVALID_SOCKET)
+        {
             printf("\t\t\t\t\t\t\t");
-            printf("Receive failed. Error code : %d\n", WSAGetLastError());
-        }
-        else {
-            printf("\t\t\t\t\t\t\t");
-            printf("Server received a message.\n");
-            frame_t data_recv = read_buffer(buffer);
-
-            if (data_recv.destination == NODE_ID) {
-                if (data_recv.function == FUNC_FIND) {
-                    frame_t data_rep;
-
-                    data_rep.function = FUNC_FOUND;
-                    data_rep.buffer = data_recv.buffer;
-                    data_rep.source = NODE_ID;
-                    data_rep.destination = data_recv.source;
-
-                    create_buffer(data_rep, buffer, buffsize);
-                    send(clientSocket, buffer, buffsize, 0);
-                    closesocket(clientSocket);
+            printf("Connection accepted\n");
+            do {
+                result = recv(clientSocket, buffer, buffsize, 0);
+                if (result > 0) {
                     printf("\t\t\t\t\t\t\t");
-                    printf("Server responsed the message.\n");
-                }
-            }
-                else {
-                    for (int i=0; i<HOP_SIZE; i++) {
-                        if (data_recv.source == hop[i].id) {
-                            continue;
+                    printf("Server received a message: %s\n", buffer);
+                    frame_t data_recv = read_buffer(buffer);
+
+                    if (data_recv.destination == NODE_ID) {
+                        if (data_recv.function == FUNC_FIND) {
+                            frame_t data_rep;
+
+                            data_rep.function = FUNC_FOUND;
+                            data_rep.buffer = data_recv.buffer;
+                            data_rep.source = NODE_ID;
+                            data_rep.destination = data_recv.source;
+
+                            create_buffer(data_rep, buffer, buffsize);
+                            send(clientSocket, buffer, buffsize, 0);
+                            closesocket(clientSocket);
+                            printf("\t\t\t\t\t\t\t");
+                            printf("Server responsed the message.\n");
                         }
-                        else {
-                            frame_t data_find_route = data_recv;
-                            data_find_route.function = FUNC_FIND;
+                    }
+                    else {
+                        for (int i=0; i<HOP_SIZE; i++) {
+                            if (hop[i].id == data_recv.source) {
+                                continue;
+                            }
+                            else {
+                                frame_t data_find_route = data_recv;
+                                data_find_route.function = FUNC_FIND;
 
-                            create_buffer(data_find_route, buffer, buffsize);
-                            send_to_node(hop[i], buffer, buffsize, &flag_found);
+                                create_buffer(data_find_route, buffer, buffsize);
+                                send_to_node(hop[i], buffer, buffsize, &flag_found);
 
-                            if (flag_found) {
-                                frame_t data_rep;
+                                if (flag_found) {
+                                    frame_t data_rep;
 
-                                data_rep.function = FUNC_FOUND;
-                                data_rep.buffer = data_recv.buffer;
-                                data_rep.source = NODE_ID;
-                                data_rep.destination = data_recv.source;
+                                    data_rep.function = FUNC_FOUND;
+                                    data_rep.buffer = data_recv.buffer;
+                                    data_rep.source = NODE_ID;
+                                    data_rep.destination = data_recv.source;
 
-                                create_buffer(data_rep, buffer, buffsize);
-                                send(clientSocket, buffer, buffsize, 0);
-                                closesocket(clientSocket);
-                                printf("\t\t\t\t\t\t\t");
-                                printf("Server responsed the message.\n");
-                                
-                                break;
+                                    create_buffer(data_rep, buffer, buffsize);
+                                    send(clientSocket, buffer, buffsize, 0);
+                                    closesocket(clientSocket);
+                                    printf("\t\t\t\t\t\t\t");
+                                    printf("Server responsed the message.\n");
+                                        
+                                    flag_found = 0;
+                                    break;
+                                }
                             }
                         }
                     }
                 }
-            }
-	}
+                else if (result == 0) {
+                    printf("\t\t\t\t\t\t\t");
+                    printf("Connection closed\n");
+                }
+                else {
+                    printf("\t\t\t\t\t\t\t");
+                    printf("Receive failed. Error code : %d\n", WSAGetLastError());
+                }
+            } while (result > 0);
+            closesocket(clientSocket);
+        }
+    }
 
     // while(1) {
     //     if ((clientSocket = accept(listenSocket, NULL, NULL)) == INVALID_SOCKET) {
