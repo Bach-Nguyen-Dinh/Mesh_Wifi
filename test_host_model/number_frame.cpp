@@ -37,14 +37,14 @@
 
 // =================================================== Define Structure ==================================================
 typedef struct FRAME{
-    int function;
-    int buffer;
-    int source;
-    int destination;
+    char function;
+    char buffer;
+    char source;
+    char destination;
 } frame_t;
 
 typedef struct HOP_LIST{
-    int id;
+    char id;
     const char *ip_addr;
     int port;
 } hop_list_t;
@@ -80,21 +80,25 @@ void create_hop() {
     }
 }
 
-void create_buffer(frame_t data, char *buffer, int buffsize) {
-    char temp[1];
+void create_buffer(frame_t data, char buffer[], int buffsize) {
+    // char temp[1];
 
-    itoa(data.function, temp, 10);
-    buffer[0] = temp[0];
+    // itoa(data.function, temp, 10);
+    // buffer[0] = temp[0];
 
-    itoa(data.buffer, temp, 10);
-    buffer[1] = temp[0];
+    // itoa(data.buffer, temp, 10);
+    // buffer[1] = temp[0];
 
-    itoa(data.source, temp, 10);
-    buffer[2] = temp[0];
+    // itoa(data.source, temp, 10);
+    // buffer[2] = temp[0];
 
-    itoa(data.destination, temp, 10);
-    buffer[3] = temp[0];
+    // itoa(data.destination, temp, 10);
+    // buffer[3] = temp[0];
 
+    buffer[0] = data.function;
+    buffer[1] = data.buffer;
+    buffer[2] = data.source;
+    buffer[3] = data.destination;
     buffer[buffsize] = '\0';
 }
 
@@ -174,12 +178,12 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
 // =================================================== Thread Function ====================================================
 void p1() {
     frame_t data_input;
-    data_input.source = NODE_ID;
-
-    int temp;
+    data_input.source = NODE_ID; 
 
     while(1) {
+        int temp;
         int flag_found = 0;
+        
         printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n");
         scanf("%d", &temp);
         if (temp == 1) {
