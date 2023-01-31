@@ -183,7 +183,7 @@ void p1() {
     while(1) {
         int temp;
         int flag_found = 0;
-        
+
         printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n");
         scanf("%d", &temp);
         if (temp == 1) {
@@ -231,6 +231,8 @@ void p1() {
                     data_input.destination = NODE_D_ID;
                 }
             }
+
+            printf("Your input: %c%c%c%c\n", data_input.function, data_input.buffer, data_input.source, data_input.destination);
 
             // check if the destination node is in hop
             for (int i=0; i<HOP_SIZE; i++) {
