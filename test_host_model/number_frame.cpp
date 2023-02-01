@@ -249,7 +249,7 @@ void p1() {
                 printf("Can not send to NODE_ID:%d.\n", data_input.destination);
             }
         }
-        if (temp == 2) {
+        else if (temp == 2) {
             exit(0);
         }
     }
