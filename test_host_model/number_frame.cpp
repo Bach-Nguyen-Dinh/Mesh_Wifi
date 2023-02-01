@@ -81,25 +81,10 @@ void create_hop() {
 }
 
 void create_buffer(frame_t data, char buffer[], int buffsize) {
-    // char temp[1];
-
-    // itoa(data.function, temp, 10);
-    // buffer[0] = temp[0];
-
-    // itoa(data.buffer, temp, 10);
-    // buffer[1] = temp[0];
-
-    // itoa(data.source, temp, 10);
-    // buffer[2] = temp[0];
-
-    // itoa(data.destination, temp, 10);
-    // buffer[3] = temp[0];
-
     buffer[0] = data.function;
     buffer[1] = data.buffer;
     buffer[2] = data.source;
     buffer[3] = data.destination;
-    buffer[buffsize] = '\0';
 }
 
 frame_t read_buffer(char *buffer) {
