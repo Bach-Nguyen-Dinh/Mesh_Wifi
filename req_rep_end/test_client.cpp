@@ -6,6 +6,7 @@
 #define FUNC_SEND 80
 #define FUNC_SHDW 83
 
+#define NODE_A_ID 90
 #define NODE_B_ID 91
 #define NODE_C_ID 92
 #define NODE_D_ID 93
@@ -17,30 +18,21 @@ typedef struct FRAME{
     int destination;
 } frame_t;
 
-void create_buffer(frame_t data, char *buffer, int buffsize) {
-    char char_arr[4];
-    char temp[1];
-
-    itoa(data.function, temp, 10);
-    char_arr[0] = temp[0];
-
-    itoa(data.buffer, temp, 10);
-    char_arr[1] = temp[0];
-
-    itoa(data.source, temp, 10);
-    char_arr[2] = temp[0];
-
-    itoa(data.destination, temp, 10);
-    char_arr[3] = temp[0];
-
-    char_arr[sizeof(char_arr)] = '\0';
+void create_buffer(frame_t data, char buffer[], int buffsize) {
+    buffer[0] = data.function;
+    buffer[1] = data.buffer;
+    buffer[2] = data.source;
+    buffer[3] = data.destination;
 }
 
 int main() {
     WSADATA wsa;
     SOCKET connectSocket;
     struct sockaddr_in server;
-    char *msg;
+    
+    int buffsize = 4;
+    char buffer[buffsize];
+
     char server_rep[2000];
     int recv_size;
 
@@ -63,7 +55,7 @@ int main() {
     }
 
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_addr.s_addr = inet_addr("192.168.55.114");
     server.sin_port = htons(8080);
 
     printf("Connecting to server ... ");
@@ -74,6 +66,7 @@ int main() {
         printf("Connected.\n");
         int temp;
         frame_t data_input;
+        data_input.source = NODE_A_ID;
 
         printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n");
         scanf("%d", &temp);
@@ -88,27 +81,29 @@ int main() {
             if (temp == 1) {
                 data_input.destination = NODE_B_ID;
             }
-                if (temp == 2) {
-                    data_input.destination = NODE_C_ID;
-                }
-                if (temp == 3) {
-                    data_input.destination = NODE_D_ID;
-                }
-            send(connectSocket, msg, strlen(msg), 0);
+            if (temp == 2) {
+                data_input.destination = NODE_C_ID;
+            }
+            if (temp == 3) {
+                data_input.destination = NODE_D_ID;
+            }
+            printf("Your input: %c%c%c%c\n", data_input.function, data_input.buffer, data_input.source, data_input.destination);
+            create_buffer(data_input, buffer, buffsize);
+            send(connectSocket, buffer, buffsize, 0);
         }
         if (temp == 2) {
             exit(0);
         }
     }
 
-    if ((recv_size = recv(connectSocket, server_rep, sizeof(server_rep), 0)) == SOCKET_ERROR) {
-        printf("Receive failed. Error code: %d\n", WSAGetLastError());
-    }
-    else {
-        // printf("Response received.\n");
-        server_rep[recv_size] = '\0';
-        puts(server_rep);
-    }
+    // if ((recv_size = recv(connectSocket, server_rep, sizeof(server_rep), 0)) == SOCKET_ERROR) {
+    //     printf("Receive failed. Error code: %d\n", WSAGetLastError());
+    // }
+    // else {
+    //     // printf("Response received.\n");
+    //     server_rep[recv_size] = '\0';
+    //     puts(server_rep);
+    // }
 
     printf("Closing socket ... ");
     if (closesocket(connectSocket) < 0) {
