@@ -166,7 +166,7 @@ void p1() {
         int temp;
         int flag_found = 0;
 
-        printf("Select function: (1) SEND (2) SHUTDOWN\n");
+        printf("Select function: (1)SEND (2)SHUTDOWN\n");
         scanf("%d", &temp);
         if (temp == 1) {
             data_input.function = FUNC_SEND;
@@ -175,7 +175,7 @@ void p1() {
             scanf("%d", &(data_input.buffer));
 
             if (NODE_ID == NODE_A_ID) {
-                printf("Select destination: (1) B (2) C (3) D\n");
+                printf("Select destination: (1)B (2)C (3)D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_B_ID;
@@ -188,7 +188,7 @@ void p1() {
                 }
             }
             if (NODE_ID == NODE_B_ID) {
-                printf("Select destination: (1) A (2) C (3) D\n");
+                printf("Select destination: (1)A (2)C (3)D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_A_ID;
@@ -201,7 +201,7 @@ void p1() {
                 }
             }
             if (NODE_ID == NODE_C_ID) {
-                printf("Select destination: (1) A (2) C (3) D\n");
+                printf("Select destination: (1)A (2)C (3)D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_A_ID;
@@ -342,14 +342,14 @@ void p3() {
                         }
                     }
                 }
-                else if (result == 0) {
+                if (result == 0) {
                     printf("\t\t\t\t\t\t\t");
                     printf("Connection closed\n");
                 }
-                else {
-                    printf("\t\t\t\t\t\t\t");
-                    printf("Receive failed. Error code : %d\n", WSAGetLastError());
-                }
+                // else {
+                //     printf("\t\t\t\t\t\t\t");
+                //     printf("Receive failed. Error code : %d\n", WSAGetLastError());
+                // }
             } while (result > 0);
             closesocket(clientSocket);
         }
