@@ -23,7 +23,7 @@
 #define NODE_B_PORT 8080
 
 #define NODE_C_ID 92
-#define NODE_C_ADDR "192.168.55.106"
+#define NODE_C_ADDR "192.168.55.107"
 #define NODE_C_PORT 8080
 
 #define NODE_D_ID 93
