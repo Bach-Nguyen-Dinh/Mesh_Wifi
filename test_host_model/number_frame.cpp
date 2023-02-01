@@ -163,7 +163,6 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
 // =================================================== Thread Function ====================================================
 void p1() {
     frame_t data_input;
-    data_input.source = NODE_ID; 
 
     while(1) {
         int temp;
@@ -216,7 +215,7 @@ void p1() {
                     data_input.destination = NODE_D_ID;
                 }
             }
-
+            data_input.source = NODE_ID; 
             printf("Your input: %c%c%c%c\n", data_input.function, data_input.buffer, data_input.source, data_input.destination);
 
             // check if the destination node is in hop
@@ -236,6 +235,7 @@ void p1() {
 
                     frame_t data_find_route = data_input;
                     data_find_route.function = FUNC_FIND;
+                    printf("Find route frame: %c%c%c%c\n", data_find_route.function, data_find_route.buffer, data_find_route.source, data_find_route.destination);
 
                     printf("\nAsking NODE_ID:%i.\n", hop[i].id);
                     create_buffer(data_find_route, buffer, buffsize);
