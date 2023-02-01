@@ -5,6 +5,7 @@
 
 #define FUNC_SEND 80
 #define FUNC_SHDW 83
+#define FUNC_FIND 84
 
 #define NODE_A_ID 90
 #define NODE_B_ID 91
@@ -88,7 +89,11 @@ int main() {
                 data_input.destination = NODE_D_ID;
             }
             printf("Your input: %c%c%c%c\n", data_input.function, data_input.buffer, data_input.source, data_input.destination);
-            create_buffer(data_input, buffer, buffsize);
+
+            frame_t data_find_route = data_input;
+            data_find_route.function = FUNC_FIND;
+            printf("Find route frame: %c%c%c%c\n", data_find_route.function, data_find_route.buffer, data_find_route.source, data_find_route.destination);
+            create_buffer(data_find_route, buffer, buffsize);
             send(connectSocket, buffer, buffsize, 0);
         }
         if (temp == 2) {
