@@ -290,7 +290,7 @@ void p3() {
                 result = recv(clientSocket, buffer, buffsize, 0);
                 if (result > 0) {
                     printf("\t\t\t\t\t\t\t");
-                    printf("Server received a message: %s\n", buffer);
+                    printf("Server received a message: %s, bytes received: %d\n", buffer, result);
                     frame_t data_recv = read_buffer(buffer);
 
                     if (data_recv.destination == NODE_ID) {
@@ -317,7 +317,7 @@ void p3() {
                             else {
                                 frame_t data_find_route = data_recv;
                                 data_find_route.function = FUNC_FIND;
-
+                                
                                 create_buffer(data_find_route, buffer, buffsize);
                                 send_to_node(hop[i], buffer, buffsize, &flag_found);
 
