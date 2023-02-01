@@ -130,7 +130,15 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
             do {
                 result = recv(connectSocket, buffer, buffsize, 0);
                 if (result > 0) {
-                    printf("Bytes received: %d\n", result);
+                    if (!out_of_time) {
+                        printf("Receive response from NODE_ID:%d. Bytes received: %d\n", dst.id, result);
+                        frame_t data_recv = read_buffer(buffer);
+
+                        if (data_recv.function == FUNC_FOUND) {
+                            *flag = 1;
+                        }
+                        break;
+                    }
                 }
                 else if (result == 0) {
                     printf("Connection closed.\n");
@@ -138,7 +146,6 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
                 else {
                     printf("Receive failed. Error code: %d.\n", WSAGetLastError());
                 }
-
                 auto interval = std::chrono::high_resolution_clock::now() -  start;
                 if (interval >= std::chrono::seconds(3)) {
                     out_of_time = 1;
@@ -146,15 +153,6 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
                     break;
                 }                
             } while (result > 0);
-
-            if (!out_of_time) {
-                frame_t data_recv = read_buffer(buffer);
-
-                if (data_recv.function == FUNC_FOUND) {
-                    printf("Found.\n");
-                    *flag = 1;
-                }
-            }
         }
         closesocket(connectSocket);
     }
