@@ -8,7 +8,7 @@
 #pragma commnet(lib, "ws2_32.lib")
 
 #define FUNC_SEND 80
-// #define FUNC_RECV 81
+#define FUNC_RECV 81
 // #define FUNC_TNFR 82
 // #define FUNC_SHDW 83
 #define FUNC_FIND 84
@@ -114,7 +114,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     else {
         printf("Connected.\n");
 
-        printf("Sending request to NODE_ID:%d . . . ", dst.id);
+        printf("Sending to NODE_ID:%d . . . ", dst.id);
         if ((send(connectSocket, buffer, buffsize, 0)) == SOCKET_ERROR) {
             printf("Failed.\n");
             closesocket(connectSocket);
@@ -131,10 +131,10 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
                 result = recv(connectSocket, buffer, buffsize, 0);
                 if (result > 0) {
                     if (!out_of_time) {
-                        printf("Receive response from NODE_ID:%d. Bytes received: %d\n", dst.id, result);
+                        printf("Received from NODE_ID:%d. Bytes received: %d\n", dst.id, result);
                         frame_t data_recv = read_buffer(buffer);
 
-                        if (data_recv.function == FUNC_FOUND) {
+                        if ((data_recv.function == FUNC_FOUND) || (data_recv.function == FUNC_RECV)) {
                             *flag = 1;
                         }
                         break;
@@ -165,6 +165,7 @@ void p1() {
     while(1) {
         int temp;
         int flag_found = 0;
+        int flag_recv = 0;
 
         printf("Select function: (1)SEND (2)SHUTDOWN\n");
         scanf("%d", &temp);
@@ -241,12 +242,18 @@ void p1() {
 
                     if (flag_found == 1) {
                         printf("Found.\n");
+                        printf("Delivering to NODE_ID:%d\n", data_input.destination);
+                        create_buffer(data_input, buffer, buffsize);
+                        send_to_node(hop[i], buffer, buffsize, &flag_recv);
                         break;
                     }
                 }
             }
             if (flag_found == 0) {
                 printf("Can not send to NODE_ID:%d.\n", data_input.destination);
+            }
+            if (flag_recv == 1) {
+                printf("NODE_ID:%d received.\n", data_input.destination);
             }
         }
         else if (temp == 2) {
@@ -265,7 +272,14 @@ void p3() {
     char buffer[buffsize];
 
     int flag_found = 0;
+    int flag_transfer = 0;
+    int flag_recv = 0;
     int result;
+    int index_node_transfer;
+
+    frame_t data_recv;
+    frame_t data_rep;
+    frame_t data_find_route;
 
     listenSocket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -290,54 +304,78 @@ void p3() {
                 result = recv(clientSocket, buffer, buffsize, 0);
                 if (result > 0) {
                     printf("\t\t\t\t\t\t\t");
-                    printf("Server received a message: %s, bytes received: %d\n", buffer, result);
-                    frame_t data_recv = read_buffer(buffer);
+                    printf("Server received a message: %s. Bytes received: %d\n", buffer, result);
+                    data_recv = read_buffer(buffer);
 
                     if (data_recv.destination == NODE_ID) {
                         if (data_recv.function == FUNC_FIND) {
-                            frame_t data_rep;
-
                             data_rep.function = FUNC_FOUND;
                             data_rep.buffer = data_recv.buffer;
                             data_rep.source = NODE_ID;
                             data_rep.destination = data_recv.source;
-
-                            create_buffer(data_rep, buffer, buffsize);
-                            send(clientSocket, buffer, buffsize, 0);
-                            closesocket(clientSocket);
-                            printf("\t\t\t\t\t\t\t");
-                            printf("Server responsed the message.\n");
                         }
+                        if (data_recv.function == FUNC_SEND) {
+                            printf("\t\t\t\t\t\t\t");
+                            printf("Message reached destination: %s. Byte received: %d\n", buffer, result);
+
+                            data_recv.function = FUNC_RECV;
+                            data_rep.buffer = data_recv.buffer;
+                            data_rep.source = NODE_ID;
+                            data_rep.destination = data_recv.source;
+                        }
+                        create_buffer(data_rep, buffer, buffsize);
+                        send(clientSocket, buffer, buffsize, 0);
+                        closesocket(clientSocket);
+                        printf("\t\t\t\t\t\t\t");
+                        printf("Server responsed the message.\n");
                     }
                     else {
-                        for (int i=0; i<HOP_SIZE; i++) {
-                            if (hop[i].id == data_recv.source) {
-                                continue;
-                            }
-                            else {
-                                frame_t data_find_route = data_recv;
-                                data_find_route.function = FUNC_FIND;
-                                
-                                create_buffer(data_find_route, buffer, buffsize);
-                                send_to_node(hop[i], buffer, buffsize, &flag_found);
-
-                                if (flag_found) {
-                                    frame_t data_rep;
-
-                                    data_rep.function = FUNC_FOUND;
-                                    data_rep.buffer = data_recv.buffer;
-                                    data_rep.source = NODE_ID;
-                                    data_rep.destination = data_recv.source;
-
-                                    create_buffer(data_rep, buffer, buffsize);
-                                    send(clientSocket, buffer, buffsize, 0);
-                                    closesocket(clientSocket);
-                                    printf("\t\t\t\t\t\t\t");
-                                    printf("Server responsed the message.\n");
-                                        
-                                    flag_found = 0;
-                                    break;
+                        if (flag_transfer == 0) {
+                            for (int i=0; i<HOP_SIZE; i++) {
+                                if (hop[i].id == data_recv.source) {
+                                    continue;
                                 }
+                                else {
+                                    data_find_route = data_recv;
+                                    data_find_route.function = FUNC_FIND;
+                                    
+                                    create_buffer(data_find_route, buffer, buffsize);
+                                    send_to_node(hop[i], buffer, buffsize, &flag_found);
+
+                                    if (flag_found) {
+                                        data_rep = data_recv;
+                                        data_rep.function = FUNC_FOUND;
+
+                                        create_buffer(data_rep, buffer, buffsize);
+                                        send(clientSocket, buffer, buffsize, 0);
+
+                                        printf("\t\t\t\t\t\t\t");
+                                        printf("Server responsed the message.\n");
+                                        closesocket(clientSocket);
+
+                                        index_node_transfer = i;
+                                        flag_transfer = 1;                                        
+                                        flag_found = 0;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        else {
+                            create_buffer(data_recv, buffer, buffsize);
+                            send_to_node(hop[index_node_transfer], buffer, buffsize, &flag_recv);
+
+                            if (flag_recv == 1) {
+                                data_rep = data_recv;
+
+                                create_buffer(data_rep, buffer, buffsize);
+                                send(clientSocket, buffer, buffsize, 0);
+
+                                printf("\t\t\t\t\t\t\t");
+                                printf("Server responsed the message.\n");
+                                closesocket(clientSocket);
+                                flag_recv = 0;
+                                flag_transfer = 0;
                             }
                         }
                     }
