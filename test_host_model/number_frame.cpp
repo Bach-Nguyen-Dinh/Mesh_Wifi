@@ -166,16 +166,16 @@ void p1() {
         int temp;
         int flag_found = 0;
 
-        printf("Select function:\n(1) SEND\n(2) SHUTDOWN\n");
+        printf("Select function: (1) SEND (2) SHUTDOWN\n");
         scanf("%d", &temp);
         if (temp == 1) {
             data_input.function = FUNC_SEND;
 
-            printf("\nEnter a number: ");
+            printf("Enter a number: ");
             scanf("%d", &(data_input.buffer));
 
             if (NODE_ID == NODE_A_ID) {
-                printf("\nSelect destination:\n(1) B\n(2) C \n(3) D\n");
+                printf("Select destination: (1) B (2) C (3) D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_B_ID;
@@ -188,7 +188,7 @@ void p1() {
                 }
             }
             if (NODE_ID == NODE_B_ID) {
-                printf("\nSelect destination:\n(1) A\n(2) C \n(3) D\n");
+                printf("Select destination: (1) A (2) C (3) D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_A_ID;
@@ -201,7 +201,7 @@ void p1() {
                 }
             }
             if (NODE_ID == NODE_C_ID) {
-                printf("\nSelect destination:\n(1) A\n(2) C \n(3) D\n");
+                printf("Select destination: (1) A (2) C (3) D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_A_ID;
@@ -235,18 +235,18 @@ void p1() {
                     data_find_route.function = FUNC_FIND;
                     printf("Find route frame: %c%c%c%c\n", data_find_route.function, data_find_route.buffer, data_find_route.source, data_find_route.destination);
 
-                    printf("\nAsking NODE_ID:%i.\n", hop[i].id);
+                    printf("Asking NODE_ID:%i.\n", hop[i].id);
                     create_buffer(data_find_route, buffer, buffsize);
                     send_to_node(hop[i], buffer, buffsize, &flag_found);
 
                     if (flag_found == 1) {
-                        printf("\nFound.\n\n");
+                        printf("Found.\n");
                         break;
                     }
                 }
             }
             if (flag_found == 0) {
-                printf("\nCan not send to NODE_ID:%d.\n\n", data_input.destination);
+                printf("Can not send to NODE_ID:%d.\n", data_input.destination);
             }
         }
         if (temp == 2) {
