@@ -244,6 +244,8 @@ void p1() {
                         break;
                     }
                 }
+            }
+            if (flag_found == 0) {
                 printf("\nCan not send to NODE_ID:%d.\n\n", data_input.destination);
             }
         }
