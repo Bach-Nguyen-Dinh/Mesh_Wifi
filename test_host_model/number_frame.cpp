@@ -106,6 +106,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     server.sin_addr.s_addr = inet_addr(dst.ip_addr);
     server.sin_port = htons(dst.port);
 
+    printf("Asking NODE_ID:%i.\n", dst.id);
     printf("Connecting to NODE_ID:%d . . . ", dst.id);
     if (connect(connectSocket, (const struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
         printf("Connect faile. Error code : %d\n", WSAGetLastError());
@@ -236,7 +237,6 @@ void p1() {
                     data_find_route.function = FUNC_FIND;
                     printf("Find route frame: %c%c%c%c\n", data_find_route.function, data_find_route.buffer, data_find_route.source, data_find_route.destination);
 
-                    printf("Asking NODE_ID:%i.\n", hop[i].id);
                     create_buffer(data_find_route, buffer, buffsize);
                     send_to_node(hop[i], buffer, buffsize, &flag_found);
 
@@ -318,7 +318,7 @@ void p3() {
                             printf("\t\t\t\t\t\t\t");
                             printf("Message reached destination: %s. Byte received: %d\n", buffer, result);
 
-                            data_recv.function = FUNC_RECV;
+                            data_rep.function = FUNC_RECV;
                             data_rep.buffer = data_recv.buffer;
                             data_rep.source = NODE_ID;
                             data_rep.destination = data_recv.source;
