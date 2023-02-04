@@ -366,6 +366,7 @@ void p3() {
 
                             if (flag_recv == 1) {
                                 data_rep = data_recv;
+                                data_rep.function = FUNC_RECV;
 
                                 create_buffer(data_rep, buffer, buffsize);
                                 send(clientSocket, buffer, buffsize, 0);
