@@ -54,7 +54,7 @@ WSADATA wsaDATA;
 
 hop_list_t hop[HOP_SIZE];
 
-int flag_recv = 0;
+// int flag_recv = 0;
 // int flag_found = 0;
 
 // =================================================== Define Function ====================================================
@@ -252,7 +252,7 @@ void p1() {
                 printf("Can not send to NODE_ID:%d.\n", data_input.destination);
             }
             if (flag_recv == 1) {
-                printf("NODE_ID:%d received.\n", data_input.destination);
+                printf("---------------- NODE_ID:%d received the message ----------------\n", data_input.destination);
             }
         }
         else if (temp == 2) {
@@ -312,21 +312,28 @@ void p3() {
                             data_rep.buffer = data_recv.buffer;
                             data_rep.source = NODE_ID;
                             data_rep.destination = data_recv.source;
+
+                            create_buffer(data_rep, buffer, buffsize);
+                            send(clientSocket, buffer, buffsize, 0);
+                            closesocket(clientSocket);
+                            printf("\t\t\t\t\t\t\t");
+                            printf("Server responsed the message.\n");
                         }
                         if (data_recv.function == FUNC_SEND) {
-                            printf("\t\t\t\t\t\t\t");
-                            printf("Message reached destination: %s. Byte received: %d\n", buffer, result);
-
                             data_rep.function = FUNC_RECV;
                             data_rep.buffer = data_recv.buffer;
                             data_rep.source = NODE_ID;
                             data_rep.destination = data_recv.source;
+
+                            create_buffer(data_rep, buffer, buffsize);
+                            send(clientSocket, buffer, buffsize, 0);
+                            closesocket(clientSocket);
+                            printf("\t\t\t\t\t\t\t");
+                            printf("Server responsed the message.\n");
+                            
+                            printf("\t\t\t\t\t\t\t");
+                            printf("---------------- Message reached destination: %s ----------------\n", buffer);
                         }
-                        create_buffer(data_rep, buffer, buffsize);
-                        send(clientSocket, buffer, buffsize, 0);
-                        closesocket(clientSocket);
-                        printf("\t\t\t\t\t\t\t");
-                        printf("Server responsed the message.\n");
                     }
                     else {
                         if (flag_transfer == 0) {
