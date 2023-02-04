@@ -332,7 +332,8 @@ void p3() {
                             printf("Server responsed the message.\n");
                             
                             printf("\t\t\t\t\t\t\t");
-                            printf("---------------- Message reached destination: %s ----------------\n", buffer);
+                            printf("---------------- Message reached destination: %C%c%c%c ----------------\n",
+                                    data_recv.function, data_recv.buffer, data_recv.source, data_recv.destination);
                         }
                     }
                     else {
