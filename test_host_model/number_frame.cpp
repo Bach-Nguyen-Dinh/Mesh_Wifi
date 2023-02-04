@@ -106,7 +106,6 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     server.sin_addr.s_addr = inet_addr(dst.ip_addr);
     server.sin_port = htons(dst.port);
 
-    printf("Asking NODE_ID:%i.\n", dst.id);
     printf("Connecting to NODE_ID:%d . . . ", dst.id);
     if (connect(connectSocket, (const struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
         printf("Connect faile. Error code : %d\n", WSAGetLastError());
@@ -132,7 +131,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
                 result = recv(connectSocket, buffer, buffsize, 0);
                 if (result > 0) {
                     if (!out_of_time) {
-                        printf("Received from NODE_ID:%d. Bytes received: %d\n", dst.id, result);
+                        printf("Received from NODE_ID:%d: %s. Bytes received: %d\n", dst.id, buffer, result);
                         frame_t data_recv = read_buffer(buffer);
 
                         if ((data_recv.function == FUNC_FOUND) || (data_recv.function == FUNC_RECV)) {
