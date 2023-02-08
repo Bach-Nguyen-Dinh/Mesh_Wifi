@@ -167,6 +167,9 @@ void p1() {
         int flag_found = 0;
         int flag_recv = 0;
 
+        int buffsize = 4;
+        char buffer[buffsize];
+
         printf("Select function: (1)SEND (2)SHUTDOWN\n");
         scanf("%d", &temp);
         if (temp == 1) {
@@ -223,15 +226,16 @@ void p1() {
                 if (data_input.destination == hop[i].id) {
                     printf("Node is in hop.\n");
                     flag_found = 1;
+                    printf("Delivering to NODE_ID:%d\n", data_input.destination);
+                    create_buffer(data_input, buffer, buffsize);
+                    send_to_node(hop[i], buffer, buffsize, &flag_recv);
                     break;
                 }
             }
             // if the destination node is not in hop, find a route to it
             if (flag_found == 0) {
+                printf("Node is not in hop.\n");
                 for (int i=0; i<HOP_SIZE; i++) {
-                    int buffsize = 4;
-                    char buffer[buffsize];
-
                     frame_t data_find_route = data_input;
                     data_find_route.function = FUNC_FIND;
                     printf("Find route frame: %c%c%c%c\n", data_find_route.function, data_find_route.buffer, data_find_route.source, data_find_route.destination);
