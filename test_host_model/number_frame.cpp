@@ -254,10 +254,13 @@ void p1() {
                 }
             }
             if (flag_found == 0) {
-                printf("---------------- Can not send to NODE_ID:%d ----------------\n", data_input.destination);
+                printf("---------------- Can not find NODE_ID:%d ----------------\n", data_input.destination);
             }
             if (flag_recv == 1) {
                 printf("---------------- NODE_ID:%d received the message ----------------\n", data_input.destination);
+            }
+            else {
+                printf("---------------- Can not send to NODE_ID:%d ----------------\n", data_input.destination);
             }
         }
         else if (temp == 2) {
