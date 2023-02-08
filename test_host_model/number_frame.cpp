@@ -13,6 +13,7 @@
 // #define FUNC_SHDW 83
 #define FUNC_FIND 84
 #define FUNC_FOUND 85
+#define FUNC_ERROR 86
 
 #define NODE_A_ID 90
 #define NODE_A_ADDR "192.168.55.103"
@@ -253,7 +254,7 @@ void p1() {
                 }
             }
             if (flag_found == 0) {
-                printf("Can not send to NODE_ID:%d.\n", data_input.destination);
+                printf("---------------- Can not send to NODE_ID:%d ----------------\n", data_input.destination);
             }
             if (flag_recv == 1) {
                 printf("---------------- NODE_ID:%d received the message ----------------\n", data_input.destination);
@@ -353,7 +354,7 @@ void p3() {
                                     create_buffer(data_find_route, buffer, buffsize);
                                     send_to_node(hop[i], buffer, buffsize, &flag_found);
 
-                                    if (flag_found) {
+                                    if (flag_found == 1) {
                                         data_rep = data_recv;
                                         data_rep.function = FUNC_FOUND;
 
@@ -370,6 +371,17 @@ void p3() {
                                         break;
                                     }
                                 }
+                            }
+                            if (flag_found == 0) {
+                                data_rep = data_recv;
+                                data_rep.function = FUNC_ERROR;
+
+                                create_buffer(data_rep, buffer, buffsize);
+                                send(clientSocket, buffer, buffsize, 0);
+
+                                printf("\t\t\t\t\t\t\t");
+                                printf("Server responsed the message.\n");
+                                closesocket(clientSocket);
                             }
                         }
                         else {
