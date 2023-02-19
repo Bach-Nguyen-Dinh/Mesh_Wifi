@@ -106,6 +106,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     struct sockaddr_in server;
     SOCKET connectSocket;
     u_long unBlockingMode = 0;
+    char *tempBuff = buffer;
 
     connectSocket = socket(AF_INET, SOCK_STREAM, 0);
 
