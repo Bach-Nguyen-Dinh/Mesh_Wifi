@@ -1,117 +1,453 @@
-#include <string>
-#include <iostream>
+#include <stdio.h>
+#include <winsock2.h>
+#include <thread>
+#include <chrono>
+#include <mutex>
+// #include <condition_variable>
 
-#define LEN_FUNC 20
-#define LEN_BUFF 255
-#define LEN_NAME 1
-#define LEN_FRAME (LEN_FUNC + LEN_BUFF + 3*LEN_NAME)
-#define LEN_ROUTE 10
+#pragma commnet(lib, "ws2_32.lib")
 
-#define NODE_ID "A"
+#define FUNC_SEND 80
+#define FUNC_RECV 81
+#define FUNC_ACTV 82
+// #define FUNC_SHDW 83
+#define FUNC_FIND 84
+#define FUNC_FOUND 85
+#define FUNC_ERROR 86
 
-#define FUNC_SEND "send"
-#define FUNC_RECV "receive"
-#define FUNC_TNFR "transfer"
-#define FUNC_SHDW "shutdown"
+#define NODE_A_ID 90
+#define NODE_A_ADDR "192.168.55.103"
+#define NODE_A_PORT 8080
 
-using namespace std;
+#define NODE_B_ID 91
+#define NODE_B_ADDR "192.168.55.114"
+#define NODE_B_PORT 8080
 
+#define NODE_C_ID 92
+#define NODE_C_ADDR "192.168.55.107"
+#define NODE_C_PORT 8080
+
+#define NODE_D_ID 93
+#define NODE_D_ADDR "127.0.0.1"
+#define NODE_D_PORT 8080
+
+#define NODE_ID NODE_B_ID
+#define NODE_ADDR NODE_B_ADDR
+#define NODE_PORT NODE_B_PORT
+#define HOP_SIZE 2
+
+// =================================================== Define Structure ==================================================
 typedef struct FRAME{
-    string function;
-    string buffer;
-    string source;
-    string destination;
-    string frame;
-    int size_route;
-    string route;
+    char function;
+    char buffer;
+    char source;
+    char destination;
 } frame_t;
 
-int main() {
-    frame_t data_input;
-    frame_t data_output;
-    
-    data_input.source = NODE_ID;
+typedef struct HOP_LIST{
+    char id;
+    const char *ip_addr;
+    int port;
+} hop_list_t;
 
-    cout << "Select function [send / shutdown]: ";
-    cin >> data_input.function;
+// =================================================== Global Variable ====================================================
+WSADATA wsaDATA;
+
+hop_list_t hop[HOP_SIZE];
+
+// =================================================== Define Function ====================================================
+void create_hop() {
+    if (NODE_ID == NODE_B_ID) {
+        hop[0].id = NODE_A_ID;
+        hop[0].ip_addr = NODE_A_ADDR;
+        hop[0].port = NODE_A_PORT;
+
+        hop[1].id = NODE_C_ID;
+        hop[1].ip_addr = NODE_C_ADDR;
+        hop[1].port = NODE_C_PORT;
+    }
+    if (NODE_ID == NODE_A_ID) {
+        hop[0].id = NODE_D_ID;
+        hop[0].ip_addr = NODE_D_ADDR;
+        hop[0].port = NODE_D_PORT;
         
-    if (data_input.function == FUNC_SEND) {
-        cout << "Enter message: ";
-        cin >> data_input.buffer;
+        hop[1].id = NODE_B_ID;
+        hop[1].ip_addr = NODE_B_ADDR;
+        hop[1].port = NODE_B_PORT;
+    }
+    if (NODE_ID == NODE_C_ID) {
+        hop[0].id = NODE_B_ID;
+        hop[0].ip_addr = NODE_B_ADDR;
+        hop[0].port = NODE_B_PORT;
+        
+        hop[1].id = NODE_D_ID;
+        hop[1].ip_addr = NODE_D_ADDR;
+        hop[1].port = NODE_D_PORT;
+    }
+}
 
-        cout << "Select destination [B / C / D]: ";
-        cin >> data_input.destination;
+void create_buffer(frame_t data, char buffer[], int buffsize) {
+    buffer[0] = data.function;
+    buffer[1] = data.buffer;
+    buffer[2] = data.source;
+    buffer[3] = data.destination;
+}
+
+frame_t read_buffer(char *buffer) {
+    frame_t frame;
+    frame.function = buffer[0];
+    frame.buffer = buffer[1];
+    frame.source = buffer[2];
+    frame.destination = buffer[3];
+    return frame;
+}
+
+void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
+    struct sockaddr_in server;
+    SOCKET connectSocket;
+    u_long unBlockingMode = 0;
+
+    connectSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+    unBlockingMode = 1;
+    if (ioctlsocket(connectSocket, FIONBIO, &unBlockingMode) != NO_ERROR) {
+        printf("ioctlsocket() failed. Error code: %d\n", WSAGetLastError());
+        closesocket(connectSocket);
+        exit(1);
     }
 
-    string frame = data_input.function + "|" + data_input.buffer + "|" + data_input.destination + "#";
-    cout << frame << endl;
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr(dst.ip_addr);
+    server.sin_port = htons(dst.port);
 
-    int i=0;
-    int seg_num=0;
-    while(frame[i] != '#') {
-        if (frame[i] == '|') {
-            seg_num++;
+    printf("Connecting to NODE_ID:%d . . . ", dst.id);
+    if (connect(connectSocket, (const struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
+        fd_set writefds;
+
+        FD_ZERO(&writefds);
+        FD_SET(connectSocket, &writefds);
+
+        timeval timeOut = {0};
+        timeOut.tv_sec = 3;
+        timeOut.tv_usec = 0;
+
+        if (select(0, NULL, &writefds, NULL, &timeOut) <= 0) {
+            printf("Time out.\n");
+            closesocket(connectSocket);
+            exit(1);
+        }
+    }
+    printf("Connected.\n");
+
+    printf("Sending to NODE_ID:%d . . . ", dst.id);
+    if ((send(connectSocket, buffer, buffsize, 0)) == SOCKET_ERROR) {
+        printf("Failed.\n");
+        closesocket(connectSocket);
+        exit(1);
+    }
+    printf("Sent.\n");
+
+    // Waiting for the response message
+    int result;
+    do {
+        result = recv(connectSocket, buffer, buffsize, 0);
+        if (result > 0) {
+            printf("Received from NODE_ID:%d: %s. Bytes received: %d\n", dst.id, buffer, result);
+            frame_t data_recv = read_buffer(buffer);
+
+            if ((data_recv.function == FUNC_FOUND) || (data_recv.function == FUNC_RECV)) {
+                *flag = 1;
+            }
+            break;
+        }
+        else if (result == 0) {
+            printf("Connection closed.\n");
         }
         else {
-            if (seg_num == 0) {
-                data_output.function += frame[i];
-            }
+            printf("Receive failed. Error code: %d.\n", WSAGetLastError());
+        }              
+    } while (result > 0);
 
-            if (seg_num == 1) {
-                data_output.buffer += frame[i];
-            }
+    closesocket(connectSocket);
+}
 
-            if (seg_num == 2) {
-                data_output.destination += frame[i];
+// =================================================== Thread Function ====================================================
+void p1() {
+    frame_t data_input;
+
+    while(1) {
+        int temp;
+        int flag_found = 0;
+        int flag_recv = 0;
+
+        int buffsize = 4;
+        char buffer[buffsize];
+
+        printf("Select function: (1)SEND (2)SHUTDOWN\n");
+        scanf("%d", &temp);
+        if (temp == 1) {
+            data_input.function = FUNC_SEND;
+
+            printf("Enter a number: ");
+            scanf("%d", &(data_input.buffer));
+
+            if (NODE_ID == NODE_A_ID) {
+                printf("Select destination: (1)B (2)C (3)D\n");
+                scanf("%d", &temp);
+                if (temp == 1) {
+                    data_input.destination = NODE_B_ID;
+                }
+                if (temp == 2) {
+                    data_input.destination = NODE_C_ID;
+                }
+                if (temp == 3) {
+                    data_input.destination = NODE_D_ID;
+                }
+            }
+            if (NODE_ID == NODE_B_ID) {
+                printf("Select destination: (1)A (2)C (3)D\n");
+                scanf("%d", &temp);
+                if (temp == 1) {
+                    data_input.destination = NODE_A_ID;
+                }
+                if (temp == 2) {
+                    data_input.destination = NODE_C_ID;
+                }
+                if (temp == 3) {
+                    data_input.destination = NODE_D_ID;
+                }
+            }
+            if (NODE_ID == NODE_C_ID) {
+                printf("Select destination: (1)A (2)C (3)D\n");
+                scanf("%d", &temp);
+                if (temp == 1) {
+                    data_input.destination = NODE_A_ID;
+                }
+                if (temp == 2) {
+                    data_input.destination = NODE_B_ID;
+                }
+                if (temp == 3) {
+                    data_input.destination = NODE_D_ID;
+                }
+            }
+            data_input.source = NODE_ID; 
+            printf("Your input: %c%c%c%c\n", data_input.function, data_input.buffer, data_input.source, data_input.destination);
+
+            // check if the destination node is in hop
+            for (int i=0; i<HOP_SIZE; i++) {
+                // if the destination node is in hop, send the message
+                if (data_input.destination == hop[i].id) {
+                    printf("Node is in hop.\n");
+                    flag_found = 1;
+                    printf("Delivering to NODE_ID:%d\n", data_input.destination);
+                    create_buffer(data_input, buffer, buffsize);
+                    send_to_node(hop[i], buffer, buffsize, &flag_recv);
+                    break;
+                }
+            }
+            // if the destination node is not in hop, find a route to it
+            if (flag_found == 0) {
+                printf("Node is not in hop.\n");
+                for (int i=0; i<HOP_SIZE; i++) {
+                    frame_t data_find_route = data_input;
+                    data_find_route.function = FUNC_FIND;
+                    printf("Find route frame: %c%c%c%c\n", data_find_route.function, data_find_route.buffer, data_find_route.source, data_find_route.destination);
+
+                    create_buffer(data_find_route, buffer, buffsize);
+                    send_to_node(hop[i], buffer, buffsize, &flag_found);
+
+                    if (flag_found == 1) {
+                        printf("Found.\n");
+                        printf("Delivering to NODE_ID:%d\n", data_input.destination);
+                        create_buffer(data_input, buffer, buffsize);
+                        send_to_node(hop[i], buffer, buffsize, &flag_recv);
+                        break;
+                    }
+                }
+            }
+            if (flag_found == 0) {
+                printf("---------------- Can not find NODE_ID:%d ----------------\n", data_input.destination);
+            }
+            else {
+                if (flag_recv == 1) {
+                    printf("---------------- NODE_ID:%d received the message ----------------\n", data_input.destination);
+                }
+                else {
+                    printf("---------------- Can not send to NODE_ID:%d ----------------\n", data_input.destination);
+                }
             }
         }
-        i++;
+        else if (temp == 2) {
+            exit(0);
+        }
     }
+}
 
-    cout << "Data entered: " << data_output.function << " | " << data_output.buffer << " | " << data_output.destination << " # ";
-
-    // create_frame(&data_input);
+void p3() {
+    struct sockaddr_in server, client;
     
-    // init_frame(&data_input);
+    SOCKET listenSocket = INVALID_SOCKET;
+    SOCKET clientSocket = INVALID_SOCKET;
 
-    // printf("%s\n", data_input.function);
-    // strcpy(data_input.function, FUNC_SEND);
-    // printf("%s, size = %d\n", data_input.function, sizeof(data_input.function));
-    // printf("%c\n", data_input.function[18]);
+    int buffsize = 4;
+    char buffer[buffsize];
 
-    // printf("%s\n", data_input.buffer);
-    // strcpy(data_input.buffer, "HELLO");
-    // printf("%s, size = %d\n", data_input.buffer, sizeof(data_input.buffer));
-    // printf("%c\n", data_input.buffer[253]);
+    int flag_found = 0;
+    int flag_transfer = 0;
+    int flag_recv = 0;
+    int result;
+    int index_node_transfer;
 
-    // printf("Frame initialized: \n%s", data_input.frame);
-    // printf("_END\n");
+    frame_t data_recv;
+    frame_t data_rep;
+    frame_t data_find_route;
 
-    // for(int i=0; i<20; i++) {
-    //     data_input.frame[i] = data_input.function[i];
-    // }
-    // for(int i=0; i<255; i++) {
-    //     data_input.frame[20+i] = data_input.buffer[i];
-    // }
+    listenSocket = socket(AF_INET, SOCK_STREAM, 0);
 
-    // printf("Frame created: \n%s", data_input.frame);
-    // printf("_END\n");
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr(NODE_ADDR);
+    server.sin_port = htons(NODE_PORT);
 
+    if (bind(listenSocket, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
+        printf("\t\t\t\t\t\t\t");
+        printf("Bind failed. Error code : %d\n", WSAGetLastError());
+    }
+    else {
+        listen(listenSocket, SOMAXCONN);
+        printf("\t\t\t\t\t\t\t");
+        printf("Server is running . . .\n");
 
-    // char test_frame[LEN_FRAME];
+        while((clientSocket = accept(listenSocket , NULL, NULL)) != INVALID_SOCKET)
+        {
+            printf("\t\t\t\t\t\t\t");
+            printf("Connection accepted\n");
+            do {
+                result = recv(clientSocket, buffer, buffsize, 0);
+                if (result > 0) {
+                    printf("\t\t\t\t\t\t\t");
+                    printf("Server received a message: %s. Bytes received: %d\n", buffer, result);
+                    data_recv = read_buffer(buffer);
 
-    // init_frame(test_frame);
+                    if (data_recv.destination == NODE_ID) {
+                        if (data_recv.function == FUNC_FIND) {
+                            data_rep.function = FUNC_FOUND;
+                            data_rep.buffer = data_recv.buffer;
+                            data_rep.source = NODE_ID;
+                            data_rep.destination = data_recv.source;
 
-    // char seg[] = "BachNguyen";
-    // int pos = 0;
-    // insert_to_arr(test_frame, seg, pos, sizeof(seg));
+                            create_buffer(data_rep, buffer, buffsize);
+                            send(clientSocket, buffer, buffsize, 0);
+                            closesocket(clientSocket);
+                            printf("\t\t\t\t\t\t\t");
+                            printf("Server responsed the message.\n");
+                        }
+                        if (data_recv.function == FUNC_SEND) {
+                            data_rep.function = FUNC_RECV;
+                            data_rep.buffer = data_recv.buffer;
+                            data_rep.source = NODE_ID;
+                            data_rep.destination = data_recv.source;
 
-    // char next_seg[] = "VietNam";
-    // pos += sizeof(seg)-1;
-    // insert_to_arr(test_frame, next_seg, pos, sizeof(next_seg));
+                            create_buffer(data_rep, buffer, buffsize);
+                            send(clientSocket, buffer, buffsize, 0);
+                            closesocket(clientSocket);
+                            printf("\t\t\t\t\t\t\t");
+                            printf("Server responsed the message.\n");
+                            
+                            printf("\t\t\t\t\t\t\t");
+                            printf("---------------- Message reached destination: %C%c%c%c ----------------\n",
+                                    data_recv.function, data_recv.buffer, data_recv.source, data_recv.destination);
+                        }
+                    }
+                    else {
+                        if (flag_transfer == 0) {
+                            for (int i=0; i<HOP_SIZE; i++) {
+                                if (hop[i].id == data_recv.source) {
+                                    continue;
+                                }
+                                else {
+                                    data_find_route = data_recv;
+                                    data_find_route.function = FUNC_FIND;
+                                    
+                                    create_buffer(data_find_route, buffer, buffsize);
+                                    send_to_node(hop[i], buffer, buffsize, &flag_found);
 
-    // printf("%s", test_frame);
-    // printf("_END\n");
+                                    if (flag_found == 1) {
+                                        data_rep = data_recv;
+                                        data_rep.function = FUNC_FOUND;
+
+                                        create_buffer(data_rep, buffer, buffsize);
+                                        send(clientSocket, buffer, buffsize, 0);
+
+                                        printf("\t\t\t\t\t\t\t");
+                                        printf("Server responsed the message.\n");
+                                        closesocket(clientSocket);
+
+                                        index_node_transfer = i;
+                                        flag_transfer = 1;                                        
+                                        flag_found = 0;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (flag_found == 0) {
+                                data_rep = data_recv;
+                                data_rep.function = FUNC_ERROR;
+
+                                create_buffer(data_rep, buffer, buffsize);
+                                send(clientSocket, buffer, buffsize, 0);
+
+                                printf("\t\t\t\t\t\t\t");
+                                printf("Server responsed the message.\n");
+                                closesocket(clientSocket);
+                            }
+                        }
+                        else {
+                            create_buffer(data_recv, buffer, buffsize);
+                            send_to_node(hop[index_node_transfer], buffer, buffsize, &flag_recv);
+
+                            if (flag_recv == 1) {
+                                data_rep = data_recv;
+                                data_rep.function = FUNC_RECV;
+
+                                create_buffer(data_rep, buffer, buffsize);
+                                send(clientSocket, buffer, buffsize, 0);
+
+                                printf("\t\t\t\t\t\t\t");
+                                printf("Server responsed the message.\n");
+                                closesocket(clientSocket);
+                                flag_recv = 0;
+                                flag_transfer = 0;
+                            }
+                        }
+                    }
+                }
+                if (result == 0) {
+                    printf("\t\t\t\t\t\t\t");
+                    printf("Connection closed\n");
+                }
+                // else {
+                //     printf("\t\t\t\t\t\t\t");
+                //     printf("Receive failed. Error code : %d\n", WSAGetLastError());
+                // }
+            } while (result > 0);
+            closesocket(clientSocket);
+        }
+    }
+}
+
+// ===================================================== Main Program =====================================================
+int main() {
+    create_hop();
+
+    if (WSAStartup(MAKEWORD(2, 2), &wsaDATA) != 0) {
+		printf("Failed. Error Code : %d\n", WSAGetLastError());
+	}
+
+    std::thread t1 = std::thread(p1);
+    std::thread t3 = std::thread(p3);
+
+    t1.join();
+    t3.join();
 
     return 0;
 }
