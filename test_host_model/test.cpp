@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <winsock2.h>
 #include <thread>
-#include <chrono>
-#include <mutex>
+// #include <chrono>
+// #include <mutex>
 // #include <condition_variable>
 
 #pragma commnet(lib, "ws2_32.lib")
@@ -138,6 +138,12 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
         }
     }
     printf("Connected.\n");
+	unBlockingMode = 0;
+    if (ioctlsocket(connectSocket, FIONBIO, &unBlockingMode) != NO_ERROR) {
+        printf("ioctlsocket() failed. Error code: %d\n", WSAGetLastError());
+        closesocket(connectSocket);
+        exit(1);
+    }
 
     printf("Sending to NODE_ID:%d . . . ", dst.id);
     if ((send(connectSocket, buffer, buffsize, 0)) == SOCKET_ERROR) {
