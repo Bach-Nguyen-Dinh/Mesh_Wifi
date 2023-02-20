@@ -31,9 +31,9 @@
 #define NODE_D_ADDR "127.0.0.1"
 #define NODE_D_PORT 8080
 
-#define NODE_ID NODE_A_ID
-#define NODE_ADDR NODE_A_ADDR
-#define NODE_PORT NODE_A_PORT
+#define NODE_ID NODE_B_ID
+#define NODE_ADDR NODE_B_ADDR
+#define NODE_PORT NODE_B_PORT
 #define HOP_SIZE 2
 
 // =================================================== Define Structure ==================================================
@@ -721,6 +721,20 @@ void p3() {
                                             flag_transfer = 1;                                        
                                             flag_found = 0;
                                             break;
+                                        }
+                                    }
+                                    else {
+                                        if (hop[i].id == NODE_A_ID) {
+                                            printf("NODE_A not reply.\n");
+                                        }
+                                        if (hop[i].id == NODE_B_ID) {
+                                            printf("NODE_B not reply.\n");
+                                        }
+                                        if (hop[i].id == NODE_C_ID) {
+                                            printf("NODE_C not reply.\n");
+                                        }
+                                        if (hop[i].id == NODE_D_ID) {
+                                            printf("NODE_D not reply.\n");
                                         }
                                     }
                                 }
