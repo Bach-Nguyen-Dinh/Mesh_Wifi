@@ -531,15 +531,51 @@ void p3() {
                         printf("Got message to ");
                         if (data_recv.destination == NODE_A_ID) {
                             printf("(NODE_A) ");
+                            if (data_recv.source == NODE_B_ID) {
+                                printf("origin (NODE_B) ");
+                            }
+                            if (data_recv.source == NODE_C_ID) {
+                                printf("origin (NODE_C) ");
+                            }
+                            if (data_recv.source == NODE_D_ID) {
+                                printf("origin (NODE_D) ");
+                            }
                         }
                         if (data_recv.destination == NODE_B_ID) {
                             printf("(NODE_B) ");
+                            if (data_recv.source == NODE_A_ID) {
+                                printf("origin (NODE_A) ");
+                            }
+                            if (data_recv.source == NODE_C_ID) {
+                                printf("origin (NODE_C) ");
+                            }
+                            if (data_recv.source == NODE_D_ID) {
+                                printf("origin (NODE_D) ");
+                            }
                         }
                         if (data_recv.destination == NODE_C_ID) {
                             printf("(NODE_C) ");
+                            if (data_recv.source == NODE_A_ID) {
+                                printf("origin (NODE_A) ");
+                            }
+                            if (data_recv.source == NODE_B_ID) {
+                                printf("origin (NODE_B) ");
+                            }
+                            if (data_recv.source == NODE_D_ID) {
+                                printf("origin (NODE_D) ");
+                            }
                         }
                         if (data_recv.destination == NODE_D_ID) {
                             printf("(NODE_D) ");
+                            if (data_recv.source == NODE_A_ID) {
+                                printf("origin (NODE_A) ");
+                            }
+                            if (data_recv.source == NODE_B_ID) {
+                                printf("origin (NODE_B) ");
+                            }
+                            if (data_recv.source == NODE_C_ID) {
+                                printf("origin (NODE_C) ");
+                            }
                         }
                     }
 
@@ -683,18 +719,18 @@ void p3() {
                                         send_to_node(hop[i], buffer, buffsize, &flag_found);
 
                                         if (flag_found == 1) {
-                                            // if (hop[i].id == NODE_A_ID) {
-                                            //     printf("Receive \"FOUND\" from NODE_A.\n");
-                                            // }
-                                            // if (hop[i].id == NODE_B_ID) {
-                                            //     printf("Receive \"FOUND\" from NODE_B.\n");
-                                            // }
-                                            // if (hop[i].id == NODE_C_ID) {
-                                            //     printf("Receive \"FOUND\" from NODE_C.\n");
-                                            // }
-                                            // if (hop[i].id == NODE_D_ID) {
-                                            //     printf("Receive \"FOUND\" from NODE_D.\n");
-                                            // }
+                                            if (hop[i].id == NODE_A_ID) {
+                                                printf("Receive \"FOUND\" from NODE_A.\n");
+                                            }
+                                            if (hop[i].id == NODE_B_ID) {
+                                                printf("Receive \"FOUND\" from NODE_B.\n");
+                                            }
+                                            if (hop[i].id == NODE_C_ID) {
+                                                printf("Receive \"FOUND\" from NODE_C.\n");
+                                            }
+                                            if (hop[i].id == NODE_D_ID) {
+                                                printf("Receive \"FOUND\" from NODE_D.\n");
+                                            }
                                             data_rep.function = FUNC_FOUND;
                                             data_rep.buffer = data_recv.buffer;
                                             data_rep.source = NODE_ID;
@@ -722,6 +758,29 @@ void p3() {
                                             flag_found = 0;
                                             break;
                                         }
+                                        else {
+                                            data_rep.function = FUNC_ERROR;
+                                            data_rep.buffer = data_recv.buffer;
+                                            data_rep.source = NODE_ID;
+                                            data_rep.destination = data_recv.source;
+
+                                            create_buffer(data_rep, buffer, buffsize);
+                                            send(clientSocket, buffer, buffsize, 0);
+                                            closesocket(clientSocket);
+
+                                            if (data_recv.source == NODE_A_ID) {
+                                                printf("Send \"ERROR\" to NODE_A.\n");
+                                            }
+                                            if (data_recv.source == NODE_B_ID) {
+                                                printf("Send \"ERROR\" to NODE_B.\n");
+                                            }
+                                            if (data_recv.source == NODE_C_ID) {
+                                                printf("Send \"ERROR\" to NODE_C.\n");
+                                            }
+                                            if (data_recv.source == NODE_D_ID) {
+                                                printf("Send \"ERROR\" to NODE_D.\n");
+                                            }
+                                        }
                                     }
                                     else {
                                         if (hop[i].id == NODE_A_ID) {
@@ -737,29 +796,6 @@ void p3() {
                                             printf("NODE_D not reply.\n");
                                         }
                                     }
-                                }
-                            }
-                            if (flag_found == 0) {
-                                data_rep.function = FUNC_ERROR;
-                                data_rep.buffer = data_recv.buffer;
-                                data_rep.source = NODE_ID;
-                                data_rep.destination = data_recv.source;
-
-                                create_buffer(data_rep, buffer, buffsize);
-                                send(clientSocket, buffer, buffsize, 0);
-                                closesocket(clientSocket);
-
-                                if (data_recv.source == NODE_A_ID) {
-                                    printf("Send \"ERROR\" to NODE_A.\n");
-                                }
-                                if (data_recv.source == NODE_B_ID) {
-                                    printf("Send \"ERROR\" to NODE_B.\n");
-                                }
-                                if (data_recv.source == NODE_C_ID) {
-                                    printf("Send \"ERROR\" to NODE_C.\n");
-                                }
-                                if (data_recv.source == NODE_D_ID) {
-                                    printf("Send \"ERROR\" to NODE_D.\n");
                                 }
                             }
                         }
