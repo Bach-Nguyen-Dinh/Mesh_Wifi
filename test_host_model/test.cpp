@@ -31,9 +31,9 @@
 #define NODE_D_ADDR "127.0.0.1"
 #define NODE_D_PORT 8080
 
-#define NODE_ID NODE_A_ID
-#define NODE_ADDR NODE_A_ADDR
-#define NODE_PORT NODE_A_PORT
+#define NODE_ID NODE_B_ID
+#define NODE_ADDR NODE_B_ADDR
+#define NODE_PORT NODE_B_PORT
 #define HOP_SIZE 2
 
 // =================================================== Define Structure ==================================================
@@ -121,7 +121,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     server.sin_addr.s_addr = inet_addr(dst.ip_addr);
     server.sin_port = htons(dst.port);
 
-    printf("Connecting to NODE_ID:%d . . . ", dst.id);
+    // printf("Connecting to NODE_ID:%d . . . ", dst.id);
     if (connect(connectSocket, (const struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
         fd_set writefds;
 
@@ -138,7 +138,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
             return;
         }
     }
-    printf("Connected.\n");
+    // printf("Connected.\n");
 	unBlockingMode = 0;
     if (ioctlsocket(connectSocket, FIONBIO, &unBlockingMode) != NO_ERROR) {
         printf("ioctlsocket() failed. Error code: %d\n", WSAGetLastError());
@@ -146,13 +146,13 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
         exit(1);
     }
 
-    printf("Sending to NODE_ID:%d . . . ", dst.id);
+    // printf("Sending to NODE_ID:%d . . . ", dst.id);
     if ((send(connectSocket, buffer, buffsize, 0)) == SOCKET_ERROR) {
         printf("Failed.\n");
         closesocket(connectSocket);
         exit(1);
     }
-    printf("Sent.\n");
+    // printf("Sent.\n");
 
     // Waiting for the response message
     int result;
