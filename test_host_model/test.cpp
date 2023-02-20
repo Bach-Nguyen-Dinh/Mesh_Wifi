@@ -510,20 +510,18 @@ void p3() {
                         printf("Receive \"ACT\" ");
                     }
                     if (data_recv.function == FUNC_FIND) {
-                        if (data_recv.destination != NODE_ID) {
-                            printf("Receive \"FIND\" ");
-                            if (data_recv.destination == NODE_A_ID) {
-                                printf("(NODE_A) ");
-                            }
-                            if (data_recv.destination == NODE_B_ID) {
-                                printf("(NODE_B) ");
-                            }
-                            if (data_recv.destination == NODE_C_ID) {
-                                printf("(NODE_C) ");
-                            }
-                            if (data_recv.destination == NODE_D_ID) {
-                                printf("(NODE_D) ");
-                            }
+                        printf("Receive \"FIND\" ");
+                        if (data_recv.destination == NODE_A_ID) {
+                            printf("(NODE_A) ");
+                        }
+                        if (data_recv.destination == NODE_B_ID) {
+                            printf("(NODE_B) ");
+                        }
+                        if (data_recv.destination == NODE_C_ID) {
+                            printf("(NODE_C) ");
+                        }
+                        if (data_recv.destination == NODE_D_ID) {
+                            printf("(NODE_D) ");
                         }
                     }
                     if (data_recv.function == FUNC_ON) {
@@ -582,24 +580,16 @@ void p3() {
                     }
 
                     if (data_recv.source == NODE_A_ID) {
-                        if ((data_recv.destination != NODE_ID) && (data_recv.function != FUNC_FIND)) {
-                            printf("from NODE_A.\n");
-                        }
+                        printf("from NODE_A.\n");
                     }
                     if (data_recv.source == NODE_B_ID) {
-                        if ((data_recv.destination != NODE_ID) && (data_recv.function != FUNC_FIND)) {
-                            printf("from NODE_B.\n");
-                        }
+                        printf("from NODE_B.\n");
                     }
                     if (data_recv.source == NODE_C_ID) {
-                        if ((data_recv.destination != NODE_ID) && (data_recv.function != FUNC_FIND)) {
-                            printf("from NODE_C.\n");
-                        }
+                        printf("from NODE_C.\n");
                     }
                     if (data_recv.source == NODE_D_ID) {
-                        if ((data_recv.destination != NODE_ID) && (data_recv.function != FUNC_FIND)) {
-                            printf("from NODE_D.\n");
-                        }
+                        printf("from NODE_D.\n");
                     }
 
                     if (data_recv.destination == NODE_ID) {
@@ -636,18 +626,18 @@ void p3() {
                             send(clientSocket, buffer, buffsize, 0);
                             closesocket(clientSocket);
                             
-                            // if (data_recv.source == NODE_A_ID) {
-                            //     printf("Send \"FOUND\" to NODE_A.\n");
-                            // }
-                            // if (data_recv.source == NODE_B_ID) {
-                            //     printf("Send \"FOUND\" to NODE_B.\n");
-                            // }
-                            // if (data_recv.source == NODE_C_ID) {
-                            //     printf("Send \"FOUND\" to NODE_C.\n");
-                            // }
-                            // if (data_recv.source == NODE_D_ID) {
-                            //     printf("Send \"FOUND\" to NODE_D.\n");
-                            // }
+                            if (data_recv.source == NODE_A_ID) {
+                                printf("Send \"FOUND\" to NODE_A.\n");
+                            }
+                            if (data_recv.source == NODE_B_ID) {
+                                printf("Send \"FOUND\" to NODE_B.\n");
+                            }
+                            if (data_recv.source == NODE_C_ID) {
+                                printf("Send \"FOUND\" to NODE_C.\n");
+                            }
+                            if (data_recv.source == NODE_D_ID) {
+                                printf("Send \"FOUND\" to NODE_D.\n");
+                            }
                         }
                         if (data_recv.function == FUNC_SEND) {
                             data_rep.function = FUNC_RECV;
