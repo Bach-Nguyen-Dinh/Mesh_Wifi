@@ -510,6 +510,9 @@ void p3() {
                         printf("Receive \"ACT\" ");
                     }
                     if (data_recv.function == FUNC_FIND) {
+                        if (data_recv.destination == NODE_ID) {
+                            continue;
+                        }
                         printf("Receive \"FIND\" ");
                         if (data_recv.destination == NODE_A_ID) {
                             printf("(NODE_A) ");
@@ -531,64 +534,76 @@ void p3() {
                         printf("Got message to ");
                         if (data_recv.destination == NODE_A_ID) {
                             printf("(NODE_A) ");
-                            if (data_recv.source == NODE_B_ID) {
-                                printf("origin (NODE_B) ");
-                            }
-                            if (data_recv.source == NODE_C_ID) {
-                                printf("origin (NODE_C) ");
-                            }
-                            if (data_recv.source == NODE_D_ID) {
-                                printf("origin (NODE_D) ");
-                            }
+                            // if (data_recv.source == NODE_B_ID) {
+                            //     printf("origin (NODE_B) ");
+                            // }
+                            // if (data_recv.source == NODE_C_ID) {
+                            //     printf("origin (NODE_C) ");
+                            // }
+                            // if (data_recv.source == NODE_D_ID) {
+                            //     printf("origin (NODE_D) ");
+                            // }
                         }
                         if (data_recv.destination == NODE_B_ID) {
                             printf("(NODE_B) ");
-                            if (data_recv.source == NODE_A_ID) {
-                                printf("origin (NODE_A) ");
-                            }
-                            if (data_recv.source == NODE_C_ID) {
-                                printf("origin (NODE_C) ");
-                            }
-                            if (data_recv.source == NODE_D_ID) {
-                                printf("origin (NODE_D) ");
-                            }
+                            // if (data_recv.source == NODE_A_ID) {
+                            //     printf("origin (NODE_A) ");
+                            // }
+                            // if (data_recv.source == NODE_C_ID) {
+                            //     printf("origin (NODE_C) ");
+                            // }
+                            // if (data_recv.source == NODE_D_ID) {
+                            //     printf("origin (NODE_D) ");
+                            // }
                         }
                         if (data_recv.destination == NODE_C_ID) {
                             printf("(NODE_C) ");
-                            if (data_recv.source == NODE_A_ID) {
-                                printf("origin (NODE_A) ");
-                            }
-                            if (data_recv.source == NODE_B_ID) {
-                                printf("origin (NODE_B) ");
-                            }
-                            if (data_recv.source == NODE_D_ID) {
-                                printf("origin (NODE_D) ");
-                            }
+                            // if (data_recv.source == NODE_A_ID) {
+                            //     printf("origin (NODE_A) ");
+                            // }
+                            // if (data_recv.source == NODE_B_ID) {
+                            //     printf("origin (NODE_B) ");
+                            // }
+                            // if (data_recv.source == NODE_D_ID) {
+                            //     printf("origin (NODE_D) ");
+                            // }
                         }
                         if (data_recv.destination == NODE_D_ID) {
                             printf("(NODE_D) ");
-                            if (data_recv.source == NODE_A_ID) {
-                                printf("origin (NODE_A) ");
-                            }
-                            if (data_recv.source == NODE_B_ID) {
-                                printf("origin (NODE_B) ");
-                            }
-                            if (data_recv.source == NODE_C_ID) {
-                                printf("origin (NODE_C) ");
-                            }
+                            // if (data_recv.source == NODE_A_ID) {
+                            //     printf("origin (NODE_A) ");
+                            // }
+                            // if (data_recv.source == NODE_B_ID) {
+                            //     printf("origin (NODE_B) ");
+                            // }
+                            // if (data_recv.source == NODE_C_ID) {
+                            //     printf("origin (NODE_C) ");
+                            // }
                         }
                     }
 
                     if (data_recv.source == NODE_A_ID) {
+                        if ((data_recv.destination == NODE_ID) && (data_recv.function == FUNC_FIND)) {
+                            continue;
+                        }
                         printf("from NODE_A.\n");
                     }
                     if (data_recv.source == NODE_B_ID) {
+                        if ((data_recv.destination == NODE_ID) && (data_recv.function == FUNC_FIND)) {
+                            continue;
+                        }
                         printf("from NODE_B.\n");
                     }
                     if (data_recv.source == NODE_C_ID) {
+                        if ((data_recv.destination == NODE_ID) && (data_recv.function == FUNC_FIND)) {
+                            continue;
+                        }
                         printf("from NODE_C.\n");
                     }
                     if (data_recv.source == NODE_D_ID) {
+                        if ((data_recv.destination == NODE_ID) && (data_recv.function == FUNC_FIND)) {
+                            continue;
+                        }
                         printf("from NODE_D.\n");
                     }
 
