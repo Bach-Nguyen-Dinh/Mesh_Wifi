@@ -31,9 +31,9 @@
 #define NODE_D_ADDR "127.0.0.1"
 #define NODE_D_PORT 8080
 
-#define NODE_ID NODE_B_ID
-#define NODE_ADDR NODE_B_ADDR
-#define NODE_PORT NODE_B_PORT
+#define NODE_ID NODE_A_ID
+#define NODE_ADDR NODE_A_ADDR
+#define NODE_PORT NODE_A_PORT
 #define HOP_SIZE 2
 
 // =================================================== Define Structure ==================================================
@@ -106,7 +106,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     struct sockaddr_in server;
     SOCKET connectSocket;
     u_long unBlockingMode = 0;
-    char *tempBuff = buffer;
+    frame_t data_temp = read_buffer(buffer);
 
     connectSocket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -121,6 +121,8 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
     server.sin_addr.s_addr = inet_addr(dst.ip_addr);
     server.sin_port = htons(dst.port);
 
+    create_buffer(data_temp, buffer, buffsize);
+
     // printf("Connecting to NODE_ID:%d . . . ", dst.id);
     if (connect(connectSocket, (const struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
         fd_set writefds;
@@ -133,7 +135,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
         timeOut.tv_usec = 0;
 
         if (select(0, NULL, &writefds, NULL, &timeOut) <= 0) {
-            printf("Time out.\n");
+            // printf("Time out.\n");
             closesocket(connectSocket);
             return;
         }
@@ -166,17 +168,17 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
                 *flag = 1;
             }
             if (data_recv.function == FUNC_ERROR) {
-                if (data_recv.source == NODE_A_ID) {
-                    printf("Receive \"ERROR\" from node A.\n");
+                if (dst.id == NODE_A_ID) {
+                    printf("Receive \"ERROR\" from NODE_A.\n");
                 }
-                if (data_recv.source == NODE_B_ID) {
-                    printf("Receive \"ERROR\" from node B.\n");
+                if (dst.id == NODE_B_ID) {
+                    printf("Receive \"ERROR\" from NODE_B.\n");
                 }
-                if (data_recv.source == NODE_C_ID) {
-                    printf("Receive \"ERROR\" from node C.\n");
+                if (dst.id == NODE_C_ID) {
+                    printf("Receive \"ERROR\" from NODE_C.\n");
                 }
-                if (data_recv.source == NODE_D_ID) {
-                    printf("Receive \"ERROR\" from node D.\n");
+                if (dst.id == NODE_D_ID) {
+                    printf("Receive \"ERROR\" from NODE_D.\n");
                 }
             }
             break;
@@ -260,29 +262,29 @@ void p1() {
                 // if the destination node is in hop, send the message
                 if (data_input.destination == hop[i].id) {
                     if (data_input.destination == NODE_A_ID) {
-                        printf("Node A is in reach.\n");
+                        printf("NODE_A is in reach.\n");
                     }
                     if (data_input.destination == NODE_B_ID) {
-                        printf("Node B is in reach.\n");
+                        printf("NODE_B is in reach.\n");
                     }
                     if (data_input.destination == NODE_C_ID) {
-                        printf("Node C is in reach.\n");
+                        printf("NODE_C is in reach.\n");
                     }
                     if (data_input.destination == NODE_D_ID) {
-                        printf("Node D is in reach.\n");
+                        printf("NODE_D is in reach.\n");
                     }
                     flag_found = 1;
                     if (data_input.destination == NODE_A_ID) {
-                        printf("Deliver message to node A.\n");
+                        printf("Deliver message to NODE_A.\n");
                     }
                     if (data_input.destination == NODE_B_ID) {
-                        printf("Deliver message to node B.\n");
+                        printf("Deliver message to NODE_B.\n");
                     }
                     if (data_input.destination == NODE_C_ID) {
-                        printf("Deliver message to node C.\n");
+                        printf("Deliver message to NODE_C.\n");
                     }
                     if (data_input.destination == NODE_D_ID) {
-                        printf("Deliver message to node D.\n");
+                        printf("Deliver message to NODE_D.\n");
                     }
                     create_buffer(data_input, buffer, buffsize);
                     send_to_node(hop[i], buffer, buffsize, &flag_recv);
@@ -292,31 +294,31 @@ void p1() {
             // if the destination node is not in hop, find a route to it
             if (flag_found == 0) {
                 if (data_input.destination == NODE_A_ID) {
-                    printf("Node A is not in reach.\n");
+                    printf("NODE_A is not in reach.\n");
                 }
                 if (data_input.destination == NODE_B_ID) {
-                    printf("Node B is not in reach.\n");
+                    printf("NODE_B is not in reach.\n");
                 }
                 if (data_input.destination == NODE_C_ID) {
-                    printf("Node C is not in reach.\n");
+                    printf("NODE_C is not in reach.\n");
                 }
                 if (data_input.destination == NODE_D_ID) {
-                    printf("Node D is not in reach.\n");
+                    printf("NODE_D is not in reach.\n");
                 }
                 printf("Check surrounding node for new route.\n");
                 for (int i=0; i<HOP_SIZE; i++) {
                     // Check availability of surrounding node
                     if (hop[i].id == NODE_A_ID) {
-                        printf("Send \"ACT\" to node A.\n");
+                        printf("Send \"ACT\" to NODE_A.\n");
                     }
                     if (hop[i].id == NODE_B_ID) {
-                        printf("Send \"ACT\" to node B.\n");
+                        printf("Send \"ACT\" to NODE_B.\n");
                     }
                     if (hop[i].id == NODE_C_ID) {
-                        printf("Send \"ACT\" to node C.\n");
+                        printf("Send \"ACT\" to NODE_C.\n");
                     }
                     if (hop[i].id == NODE_D_ID) {
-                        printf("Send \"ACT\" to node D.\n");
+                        printf("Send \"ACT\" to NODE_D.\n");
                     }
                     frame_t data_check_avtive = data_input;
                     data_check_avtive.function = FUNC_ACTV;
@@ -328,16 +330,16 @@ void p1() {
                     if (flag_actv == 1) {
                         // if node is available, find new route by it
                         if (hop[i].id == NODE_A_ID) {
-                            printf("Receive \"ON\" from node A.\nSend \"FIND\" to node A.\n");
+                            printf("Receive \"ON\" from NODE_A.\nSend \"FIND\" to NODE_A.\n");
                         }
                         if (hop[i].id == NODE_B_ID) {
-                            printf("Receive \"ON\" from node B.\nSend \"FIND\" to node A.\n");
+                            printf("Receive \"ON\" from NODE_B.\nSend \"FIND\" to NODE_B.\n");
                         }
                         if (hop[i].id == NODE_C_ID) {
-                            printf("Receive \"ON\" from node C.\nSend \"FIND\" to node A.\n");
+                            printf("Receive \"ON\" from NODE_C.\nSend \"FIND\" to NODE_C.\n");
                         }
                         if (hop[i].id == NODE_D_ID) {
-                            printf("Receive \"ON\" from node D.\nSend \"FIND\" to node A.\n");
+                            printf("Receive \"ON\" from NODE_D.\nSend \"FIND\" to NODE_D.\n");
                         }
                         frame_t data_find_route = data_input;
                         data_find_route.function = FUNC_FIND;
@@ -348,74 +350,107 @@ void p1() {
 
                         if (flag_found == 1) {
                             if (hop[i].id == NODE_A_ID) {
-                                printf("Receive \"FOUND\" from node A.\n");
+                                printf("Receive \"FOUND\" from NODE_A.\n");
                             }
                             if (hop[i].id == NODE_B_ID) {
-                                printf("Receive \"FOUND\" from node B.\n");
+                                printf("Receive \"FOUND\" from NODE_B.\n");
                             }
                             if (hop[i].id == NODE_C_ID) {
-                                printf("Receive \"FOUND\" from node C.\n");
+                                printf("Receive \"FOUND\" from NODE_C.\n");
                             }
                             if (hop[i].id == NODE_D_ID) {
-                                printf("Receive \"FOUND\" from node D.\n");
+                                printf("Receive \"FOUND\" from NODE_D.\n");
                             }
                             
                             if (data_input.destination == NODE_A_ID) {
-                                printf("Deliver message to node A.\n");
+                                printf("Deliver message to NODE_A.\n");
                             }
                             if (data_input.destination == NODE_B_ID) {
-                                printf("Deliver message to node B.\n");
+                                printf("Deliver message to NODE_B.\n");
                             }
                             if (data_input.destination == NODE_C_ID) {
-                                printf("Deliver message to node C.\n");
+                                printf("Deliver message to NODE_C.\n");
                             }
                             if (data_input.destination == NODE_D_ID) {
-                                printf("Deliver message to node D.\n");
+                                printf("Deliver message to NODE_D.\n");
                             }
                             create_buffer(data_input, buffer, buffsize);
                             send_to_node(hop[i], buffer, buffsize, &flag_recv);
                             break;
                         }
-                        else {
-                            if (hop[i].id == NODE_A_ID) {
-                                printf("Node A can not find a route.\n");
-                            }
-                            if (hop[i].id == NODE_B_ID) {
-                                printf("Node B can not find a route.\n");
-                            }
-                            if (hop[i].id == NODE_C_ID) {
-                                printf("Node C can not find a route.\n");
-                            }
-                            if (hop[i].id == NODE_D_ID) {
-                                printf("Node D can not find a route.\n");
-                            }
-                        }
+                        // else {
+                        //     if (hop[i].id == NODE_A_ID) {
+                        //         printf("NODE_A can not find a route.\n");
+                        //     }
+                        //     if (hop[i].id == NODE_B_ID) {
+                        //         printf("NODE_B can not find a route.\n");
+                        //     }
+                        //     if (hop[i].id == NODE_C_ID) {
+                        //         printf("NODE_C can not find a route.\n");
+                        //     }
+                        //     if (hop[i].id == NODE_D_ID) {
+                        //         printf("NODE_D can not find a route.\n");
+                        //     }
+                        // }
                     }
                     else {
                         if (hop[i].id == NODE_A_ID) {
-                            printf("Node A not reply.\n");
+                            printf("NODE_A not reply.\n");
                         }
                         if (hop[i].id == NODE_B_ID) {
-                            printf("Node B not reply.\n");
+                            printf("NODE_B not reply.\n");
                         }
                         if (hop[i].id == NODE_C_ID) {
-                            printf("Node C not reply.\n");
+                            printf("NODE_C not reply.\n");
                         }
                         if (hop[i].id == NODE_D_ID) {
-                            printf("Node D not reply.\n");
+                            printf("NODE_D not reply.\n");
                         }
                     }
                 }
             }
             if (flag_found == 0) {
-                printf("---------------- Can not find NODE_ID:%d ----------------\n", data_input.destination);
+                if (data_input.destination == NODE_A_ID) {
+                    printf("---------------- Can not find NODE_A ----------------\n");
+                }
+                if (data_input.destination == NODE_B_ID) {
+                    printf("---------------- Can not find NODE_B ----------------\n");
+                }
+                if (data_input.destination == NODE_C_ID) {
+                    printf("---------------- Can not find NODE_C ----------------\n");
+                }
+                if (data_input.destination == NODE_D_ID) {
+                    printf("---------------- Can not find NODE_D ----------------\n");
+                }
             }
             else {
                 if (flag_recv == 1) {
-                    printf("---------------- NODE_ID:%d received the message ----------------\n", data_input.destination);
+                    if (data_input.destination == NODE_A_ID) {
+                        printf("---------------- NODE_A received the message ----------------\n");
+                    }
+                    if (data_input.destination == NODE_B_ID) {
+                        printf("---------------- NODE_B received the message ----------------\n");
+                    }
+                    if (data_input.destination == NODE_C_ID) {
+                        printf("---------------- NODE_C received the message ----------------\n");
+                    }
+                    if (data_input.destination == NODE_D_ID) {
+                        printf("---------------- NODE_D received the message ----------------\n");
+                    }
                 }
                 else {
-                    printf("---------------- Can not send to NODE_ID:%d ----------------\n", data_input.destination);
+                    if (data_input.destination == NODE_A_ID) {
+                        printf("---------------- Can not send to NODE_A ----------------\n");
+                    }
+                    if (data_input.destination == NODE_B_ID) {
+                        printf("---------------- Can not send to NODE_B ----------------\n");
+                    }
+                    if (data_input.destination == NODE_C_ID) {
+                        printf("---------------- Can not send to NODE_C ----------------\n");
+                    }
+                    if (data_input.destination == NODE_D_ID) {
+                        printf("---------------- Can not send to NODE_D ----------------\n");
+                    }
                 }
             }
         }
@@ -477,16 +512,16 @@ void p3() {
                     if (data_recv.function == FUNC_FIND) {
                         printf("Receive \"FIND\" ");
                         if (data_recv.destination == NODE_A_ID) {
-                            printf("(node A) ");
+                            printf("(NODE_A) ");
                         }
                         if (data_recv.destination == NODE_B_ID) {
-                            printf("(node B) ");
+                            printf("(NODE_B) ");
                         }
                         if (data_recv.destination == NODE_C_ID) {
-                            printf("(node C) ");
+                            printf("(NODE_C) ");
                         }
                         if (data_recv.destination == NODE_D_ID) {
-                            printf("(node D) ");
+                            printf("(NODE_D) ");
                         }
                     }
                     if (data_recv.function == FUNC_ON) {
@@ -495,30 +530,30 @@ void p3() {
                     if (data_recv.function == FUNC_SEND) {
                         printf("Got message to ");
                         if (data_recv.destination == NODE_A_ID) {
-                            printf("(node A) ");
+                            printf("(NODE_A) ");
                         }
                         if (data_recv.destination == NODE_B_ID) {
-                            printf("(node B) ");
+                            printf("(NODE_B) ");
                         }
                         if (data_recv.destination == NODE_C_ID) {
-                            printf("(node C) ");
+                            printf("(NODE_C) ");
                         }
                         if (data_recv.destination == NODE_D_ID) {
-                            printf("(node D) ");
+                            printf("(NODE_D) ");
                         }
                     }
 
                     if (data_recv.source == NODE_A_ID) {
-                        printf("from node A.\n");
+                        printf("from NODE_A.\n");
                     }
                     if (data_recv.source == NODE_B_ID) {
-                        printf("from node B.\n");
+                        printf("from NODE_B.\n");
                     }
                     if (data_recv.source == NODE_C_ID) {
-                        printf("from node C.\n");
+                        printf("from NODE_C.\n");
                     }
                     if (data_recv.source == NODE_D_ID) {
-                        printf("from node D.\n");
+                        printf("from NODE_D.\n");
                     }
 
                     if (data_recv.destination == NODE_ID) {
@@ -533,16 +568,16 @@ void p3() {
                             closesocket(clientSocket);
 
                             if (data_recv.source == NODE_A_ID) {
-                                printf("Send \"ON\" to node A.\n");
+                                printf("Send \"ON\" to NODE_A.\n");
                             }
                             if (data_recv.source == NODE_B_ID) {
-                                printf("Send \"ON\" to node B.\n");
+                                printf("Send \"ON\" to NODE_B.\n");
                             }
                             if (data_recv.source == NODE_C_ID) {
-                                printf("Send \"ON\" to node C.\n");
+                                printf("Send \"ON\" to NODE_C.\n");
                             }
                             if (data_recv.source == NODE_D_ID) {
-                                printf("Send \"ON\" to node D.\n");
+                                printf("Send \"ON\" to NODE_D.\n");
                             }
                         }
                         if (data_recv.function == FUNC_FIND) {
@@ -556,16 +591,16 @@ void p3() {
                             closesocket(clientSocket);
                             
                             // if (data_recv.source == NODE_A_ID) {
-                            //     printf("Send \"FOUND\" to node A.\n");
+                            //     printf("Send \"FOUND\" to NODE_A.\n");
                             // }
                             // if (data_recv.source == NODE_B_ID) {
-                            //     printf("Send \"FOUND\" to node B.\n");
+                            //     printf("Send \"FOUND\" to NODE_B.\n");
                             // }
                             // if (data_recv.source == NODE_C_ID) {
-                            //     printf("Send \"FOUND\" to node C.\n");
+                            //     printf("Send \"FOUND\" to NODE_C.\n");
                             // }
                             // if (data_recv.source == NODE_D_ID) {
-                            //     printf("Send \"FOUND\" to node D.\n");
+                            //     printf("Send \"FOUND\" to NODE_D.\n");
                             // }
                         }
                         if (data_recv.function == FUNC_SEND) {
@@ -579,16 +614,16 @@ void p3() {
                             closesocket(clientSocket);
 
                             if (data_recv.source == NODE_A_ID) {
-                                printf("Send \"RECV\" to node A.\n");
+                                printf("Send \"RECV\" to NODE_A.\n");
                             }
                             if (data_recv.source == NODE_B_ID) {
-                                printf("Send \"RECV\" to node B.\n");
+                                printf("Send \"RECV\" to NODE_B.\n");
                             }
                             if (data_recv.source == NODE_C_ID) {
-                                printf("Send \"RECV\" to node C.\n");
+                                printf("Send \"RECV\" to NODE_C.\n");
                             }
                             if (data_recv.source == NODE_D_ID) {
-                                printf("Send \"RECV\" to node D.\n");
+                                printf("Send \"RECV\" to NODE_D.\n");
                             }
                             
                             // printf("\t\t\t\t\t\t\t");
@@ -605,19 +640,20 @@ void p3() {
                                 else {
                                     // Check availability of surrounding node
                                     if (hop[i].id == NODE_A_ID) {
-                                        printf("Send \"ACT\" to node A.\n");
+                                        printf("Send \"ACT\" to NODE_A.\n");
                                     }
                                     if (hop[i].id == NODE_B_ID) {
-                                        printf("Send \"ACT\" to node B.\n");
+                                        printf("Send \"ACT\" to NODE_B.\n");
                                     }
                                     if (hop[i].id == NODE_C_ID) {
-                                        printf("Send \"ACT\" to node C.\n");
+                                        printf("Send \"ACT\" to NODE_C.\n");
                                     }
                                     if (hop[i].id == NODE_D_ID) {
-                                        printf("Send \"ACT\" to node D.\n");
+                                        printf("Send \"ACT\" to NODE_D.\n");
                                     }
-                                    data_check_avtive = data_recv;
                                     data_check_avtive.function = FUNC_ACTV;
+                                    data_check_avtive.buffer = data_recv.buffer;
+                                    data_check_avtive.source = NODE_ID;
                                     data_check_avtive.destination = hop[i].id;
 
                                     create_buffer(data_check_avtive, buffer, buffsize);
@@ -626,55 +662,59 @@ void p3() {
                                     if (flag_actv == 1) {
                                          // if node is available, find new route by it
                                         if (hop[i].id == NODE_A_ID) {
-                                            printf("Receive \"ON\" from node A.\nSend \"FIND\" to node A.\n");
+                                            printf("Receive \"ON\" from NODE_A.\nSend \"FIND\" to NODE_A.\n");
                                         }
                                         if (hop[i].id == NODE_B_ID) {
-                                            printf("Receive \"ON\" from node B.\nSend \"FIND\" to node A.\n");
+                                            printf("Receive \"ON\" from NODE_B.\nSend \"FIND\" to NODE_B.\n");
                                         }
                                         if (hop[i].id == NODE_C_ID) {
-                                            printf("Receive \"ON\" from node C.\nSend \"FIND\" to node A.\n");
+                                            printf("Receive \"ON\" from NODE_C.\nSend \"FIND\" to NODE_C.\n");
                                         }
                                         if (hop[i].id == NODE_D_ID) {
-                                            printf("Receive \"ON\" from node D.\nSend \"FIND\" to node A.\n");
+                                            printf("Receive \"ON\" from NODE_D.\nSend \"FIND\" to NODE_D.\n");
                                         }
 
-                                        data_find_route = data_recv;
                                         data_find_route.function = FUNC_FIND;
+                                        data_find_route.buffer = data_recv.buffer;
+                                        data_find_route.source = NODE_ID;
+                                        data_find_route.destination = hop[i].id;
                                         
                                         create_buffer(data_find_route, buffer, buffsize);
                                         send_to_node(hop[i], buffer, buffsize, &flag_found);
 
                                         if (flag_found == 1) {
                                             // if (hop[i].id == NODE_A_ID) {
-                                            //     printf("Receive \"FOUND\" from node A.\n");
+                                            //     printf("Receive \"FOUND\" from NODE_A.\n");
                                             // }
                                             // if (hop[i].id == NODE_B_ID) {
-                                            //     printf("Receive \"FOUND\" from node B.\n");
+                                            //     printf("Receive \"FOUND\" from NODE_B.\n");
                                             // }
                                             // if (hop[i].id == NODE_C_ID) {
-                                            //     printf("Receive \"FOUND\" from node C.\n");
+                                            //     printf("Receive \"FOUND\" from NODE_C.\n");
                                             // }
                                             // if (hop[i].id == NODE_D_ID) {
-                                            //     printf("Receive \"FOUND\" from node D.\n");
+                                            //     printf("Receive \"FOUND\" from NODE_D.\n");
                                             // }
-                                            data_rep = data_recv;
                                             data_rep.function = FUNC_FOUND;
+                                            data_rep.buffer = data_recv.buffer;
+                                            data_rep.source = NODE_ID;
+                                            data_rep.destination = data_recv.source;
 
                                             create_buffer(data_rep, buffer, buffsize);
                                             send(clientSocket, buffer, buffsize, 0);
                                             closesocket(clientSocket);
 
                                             if (data_recv.source == NODE_A_ID) {
-                                                printf("Send \"FOUND\" to node A.\n");
+                                                printf("Send \"FOUND\" to NODE_A.\n");
                                             }
                                             if (data_recv.source == NODE_B_ID) {
-                                                printf("Send \"FOUND\" to node B.\n");
+                                                printf("Send \"FOUND\" to NODE_B.\n");
                                             }
                                             if (data_recv.source == NODE_C_ID) {
-                                                printf("Send \"FOUND\" to node C.\n");
+                                                printf("Send \"FOUND\" to NODE_C.\n");
                                             }
                                             if (data_recv.source == NODE_D_ID) {
-                                                printf("Send \"FOUND\" to node D.\n");
+                                                printf("Send \"FOUND\" to NODE_D.\n");
                                             }
 
                                             index_node_transfer = i;
@@ -686,58 +726,62 @@ void p3() {
                                 }
                             }
                             if (flag_found == 0) {
-                                data_rep = data_recv;
                                 data_rep.function = FUNC_ERROR;
+                                data_rep.buffer = data_recv.buffer;
+                                data_rep.source = NODE_ID;
+                                data_rep.destination = data_recv.source;
 
                                 create_buffer(data_rep, buffer, buffsize);
                                 send(clientSocket, buffer, buffsize, 0);
                                 closesocket(clientSocket);
 
                                 if (data_recv.source == NODE_A_ID) {
-                                    printf("Send \"ERROR\" to node A.\n");
+                                    printf("Send \"ERROR\" to NODE_A.\n");
                                 }
                                 if (data_recv.source == NODE_B_ID) {
-                                    printf("Send \"ERROR\" to node B.\n");
+                                    printf("Send \"ERROR\" to NODE_B.\n");
                                 }
                                 if (data_recv.source == NODE_C_ID) {
-                                    printf("Send \"ERROR\" to node C.\n");
+                                    printf("Send \"ERROR\" to NODE_C.\n");
                                 }
                                 if (data_recv.source == NODE_D_ID) {
-                                    printf("Send \"ERROR\" to node D.\n");
+                                    printf("Send \"ERROR\" to NODE_D.\n");
                                 }
                             }
                         }
                         else {
                             if (hop[index_node_transfer].id == NODE_A_ID) {
-                                printf("Deliver message to node A.\n");
+                                printf("Deliver message to NODE_A.\n");
                             }
                             if (hop[index_node_transfer].id == NODE_B_ID) {
-                                printf("Deliver message to node B.\n");
+                                printf("Deliver message to NODE_B.\n");
                             }
                             if (hop[index_node_transfer].id == NODE_C_ID) {
-                                printf("Deliver message to node C.\n");
+                                printf("Deliver message to NODE_C.\n");
                             }
                             if (hop[index_node_transfer].id == NODE_D_ID) {
-                                printf("Deliver message to node D.\n");
+                                printf("Deliver message to NODE_D.\n");
                             }
                             create_buffer(data_recv, buffer, buffsize);
                             send_to_node(hop[index_node_transfer], buffer, buffsize, &flag_recv);
 
                             if (flag_recv == 1) {
                                 if (hop[index_node_transfer].id == NODE_A_ID) {
-                                    printf("Receive \"RECV\" from node A.\n");
+                                    printf("Receive \"RECV\" from NODE_A.\n");
                                 }
                                 if (hop[index_node_transfer].id == NODE_B_ID) {
-                                    printf("Receive \"RECV\" from node B.\n");
+                                    printf("Receive \"RECV\" from NODE_B.\n");
                                 }
                                 if (hop[index_node_transfer].id == NODE_C_ID) {
-                                    printf("Receive \"RECV\" from node C.\n");
+                                    printf("Receive \"RECV\" from NODE_C.\n");
                                 }
                                 if (hop[index_node_transfer].id == NODE_D_ID) {
-                                    printf("Receive \"RECV\" from node D.\n");
+                                    printf("Receive \"RECV\" from NODE_D.\n");
                                 }
-                                data_rep = data_recv;
                                 data_rep.function = FUNC_RECV;
+                                data_rep.buffer = data_recv.buffer;
+                                data_rep.source = NODE_ID;
+                                data_rep.destination = data_recv.source;
 
                                 create_buffer(data_rep, buffer, buffsize);
                                 send(clientSocket, buffer, buffsize, 0);
@@ -747,16 +791,16 @@ void p3() {
                                 flag_transfer = 0;
 
                                 if (data_recv.source == NODE_A_ID) {
-                                    printf("Send \"RECV\" to node A.\n");
+                                    printf("Send \"RECV\" to NODE_A.\n");
                                 }
                                 if (data_recv.source == NODE_B_ID) {
-                                    printf("Send \"RECV\" to node B.\n");
+                                    printf("Send \"RECV\" to NODE_B.\n");
                                 }
                                 if (data_recv.source == NODE_C_ID) {
-                                    printf("Send \"RECV\" to node C.\n");
+                                    printf("Send \"RECV\" to NODE_C.\n");
                                 }
                                 if (data_recv.source == NODE_D_ID) {
-                                    printf("Send \"RECV\" to node D.\n");
+                                    printf("Send \"RECV\" to NODE_D.\n");
                                 }
                             }
                         }
