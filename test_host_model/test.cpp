@@ -31,10 +31,10 @@
 #define NODE_D_ADDR "127.0.0.1"
 #define NODE_D_PORT 8080
 
-#define NODE_ID NODE_B_ID
-#define NODE_ADDR NODE_B_ADDR
-#define NODE_PORT NODE_B_PORT
-#define HOP_SIZE 2
+#define NODE_ID NODE_A_ID
+#define NODE_ADDR NODE_A_ADDR
+#define NODE_PORT NODE_A_PORT
+#define HOP_SIZE 3
 
 // =================================================== Define Structure ==================================================
 typedef struct FRAME{
@@ -201,6 +201,7 @@ void send_to_node(hop_list_t dst, char *buffer, int buffsize, int *flag) {
 // =================================================== Thread Function ====================================================
 void p1() {
     frame_t data_input;
+    int flag_disconnect_c = 0;
 
     while(1) {
         int temp;
@@ -211,8 +212,14 @@ void p1() {
         int buffsize = 4;
         char buffer[buffsize];
 
-        printf("Select function: (1)SEND (2)SHUTDOWN (3)DISCONNECT C\n");
-        scanf("%d", &temp);
+        if (flag_disconnect_c == 0) {
+            printf("Select function: (1)SEND (2)SHUTDOWN (3)DISCONNECT_C\n");
+            scanf("%d", &temp);
+        }
+        else {
+            printf("Select function: (1)SEND (2)SHUTDOWN (3)RECONNECT_C\n");
+            scanf("%d", &temp);
+        }
         if (temp == 1) {
             data_input.function = FUNC_SEND;
 
@@ -511,7 +518,16 @@ void p1() {
             exit(0);
         }
         else if (temp == 3) {
-
+            if (flag_disconnect_c == 0) {
+                hop[2] = {0};
+                flag_disconnect_c = 1;
+            }
+            else {
+                hop[2].id = NODE_C_ID;
+                hop[2].ip_addr = NODE_C_ADDR;
+                hop[2].port = NODE_C_PORT;
+                flag_disconnect_c = 0;
+            }
         }
     }
 }
