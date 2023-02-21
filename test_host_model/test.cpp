@@ -212,12 +212,18 @@ void p1() {
         int buffsize = 4;
         char buffer[buffsize];
 
-        if (flag_disconnect_c == 0) {
-            printf("Select function: (1)SEND (2)SHUTDOWN (3)DISCONNECT_C\n");
-            scanf("%d", &temp);
+        if (NODE_ID == NODE_A_ID) {
+            if (flag_disconnect_c == 0) {
+                printf("Select function: (1)SEND (2)SHUTDOWN (3)DISCONNECT_C\n");
+                scanf("%d", &temp);
+            }
+            else {
+                printf("Select function: (1)SEND (2)SHUTDOWN (3)RECONNECT_C\n");
+                scanf("%d", &temp);
+            }
         }
         else {
-            printf("Select function: (1)SEND (2)SHUTDOWN (3)RECONNECT_C\n");
+            printf("Select function: (1)SEND (2)SHUTDOWN\n");
             scanf("%d", &temp);
         }
         if (temp == 1) {
