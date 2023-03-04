@@ -30,7 +30,7 @@ int main() {
     }
 
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr("192.168.55.110");
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
     server.sin_port = htons(8888);
 
     printf("Connecting to server ... ");

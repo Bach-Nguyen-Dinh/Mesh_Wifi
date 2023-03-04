@@ -31,9 +31,9 @@
 #define NODE_D_ADDR "127.0.0.1"
 #define NODE_D_PORT 8080
 
-#define NODE_ID NODE_A_ID
-#define NODE_ADDR NODE_A_ADDR
-#define NODE_PORT NODE_A_PORT
+#define NODE_ID NODE_B_ID
+#define NODE_ADDR NODE_B_ADDR
+#define NODE_PORT NODE_B_PORT
 #define HOP_SIZE 3
 
 // =================================================== Define Structure ==================================================

@@ -32,8 +32,8 @@ int main() {
 
     server.sin_family = AF_INET;
     // server.sin_addr.s_addr = INADDR_ANY; // localhost IP address
-    server.sin_addr.s_addr = inet_addr("192.168.55.112");
-    server.sin_port = htons(8888);
+    server.sin_addr.s_addr = inet_addr("192.168.55.114");
+    server.sin_port = htons(8080);
 
     printf("Binding ... ");
     if (bind(s, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
@@ -63,13 +63,13 @@ int main() {
         return 1;
     }
     else {
-        printf("Request received.\n");
+        printf("Request received. Bytes received: %d\n", recv_size);
         client_req[recv_size] = '\0';
         puts(client_req);
     }
 
-    msg = "Hello client, this is server\n";
-    send(new_s, msg, strlen(msg), 0);
+    // msg = "Hello client, this is server\n";
+    // send(new_s, msg, strlen(msg), 0);
 
     printf("Closing socket ... ");
     if (closesocket(s) < 0) {

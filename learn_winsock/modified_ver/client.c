@@ -15,13 +15,13 @@
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "8888"
-#define DEFAULT_IP_ADDRESS "127.0.0.1"
 
-// int __cdecl main(int argc, char **argv) 
-int main()
+int __cdecl main(int argc, char **argv) 
 {
     WSADATA wsaData;
     SOCKET ConnectSocket = INVALID_SOCKET;
+    struct sockaddr_in server;
+
     struct addrinfo *result = NULL,
                     *ptr = NULL,
                     hints;
@@ -30,11 +30,11 @@ int main()
     int iResult;
     int recvbuflen = DEFAULT_BUFLEN;
     
-    // // Validate the parameters
-    // if (argc != 2) {
-    //     printf("usage: %s server-name\n", argv[0]);
-    //     return 1;
-    // }
+    // Validate the parameters
+    if (argc != 2) {
+        printf("usage: %s server-name\n", argv[0]);
+        return 1;
+    }
 
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -49,12 +49,16 @@ int main()
     hints.ai_protocol = IPPROTO_TCP;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(DEFAULT_IP_ADDRESS, DEFAULT_PORT, &hints, &result);
+    iResult = getaddrinfo(argv[1], DEFAULT_PORT, &hints, &result);
     if ( iResult != 0 ) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();
         return 1;
     }
+
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_port = htons(8888);
 
     // Attempt to connect to an address until one succeeds
     for(ptr=result; ptr != NULL ;ptr=ptr->ai_next) {
@@ -68,7 +72,15 @@ int main()
         }
 
         // Connect to server.
-        iResult = connect( ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+        // iResult = connect( ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+        // if (iResult == SOCKET_ERROR) {
+        //     closesocket(ConnectSocket);
+        //     ConnectSocket = INVALID_SOCKET;
+        //     continue;
+        // }
+        // break;
+
+        iResult = connect( ConnectSocket, (struct sockaddr *)&server, sizeof(server));
         if (iResult == SOCKET_ERROR) {
             closesocket(ConnectSocket);
             ConnectSocket = INVALID_SOCKET;

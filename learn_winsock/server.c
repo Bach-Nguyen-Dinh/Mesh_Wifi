@@ -14,7 +14,7 @@
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "8888"
-#define DEFAULT_IP_ADDRESS "192.168.55.110"
+#define DEFAULT_IP_ADDRESS "127.0.0.1"
 
 int __cdecl main(void) 
 {

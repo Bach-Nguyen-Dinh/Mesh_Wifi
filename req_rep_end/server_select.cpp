@@ -31,8 +31,8 @@ int main() {
     }
 
     server.sin_family = AF_INET;
-    // server.sin_addr.s_addr = INADDR_ANY; // localhost IP address
-    server.sin_addr.s_addr = inet_addr("192.168.55.112");
+    server.sin_addr.s_addr = INADDR_ANY; // localhost IP address
+    // server.sin_addr.s_addr = inet_addr("192.168.55.112");
     server.sin_port = htons(8888);
 
     printf("Binding ... ");
@@ -53,23 +53,23 @@ int main() {
         return 1;
     }
     else {
-        printf("Connection accepted.\n");
+        printf("Accepted.\n");
         // msg = "Hello client, this is server\n";
         // send(new_s, msg, strlen(msg), 0);
     }
 
-    if ((recv_size = recv(new_s, client_req, sizeof(client_req), 0)) == SOCKET_ERROR) {
-        printf("Receive failed. Error code: %d\n", WSAGetLastError());
-        return 1;
-    }
-    else {
-        printf("Request received.\n");
-        client_req[recv_size] = '\0';
-        puts(client_req);
-    }
+    // if ((recv_size = recv(new_s, client_req, sizeof(client_req), 0)) == SOCKET_ERROR) {
+    //     printf("Receive failed. Error code: %d\n", WSAGetLastError());
+    //     return 1;
+    // }
+    // else {
+    //     printf("Request received.\n");
+    //     client_req[recv_size] = '\0';
+    //     puts(client_req);
+    // }
 
-    msg = "Hello client, this is server\n";
-    send(new_s, msg, strlen(msg), 0);
+    // msg = "Hello client, this is server\n";
+    // send(new_s, msg, strlen(msg), 0);
 
     printf("Closing socket ... ");
     if (closesocket(s) < 0) {
