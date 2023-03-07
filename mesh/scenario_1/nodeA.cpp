@@ -277,7 +277,7 @@ void p1() {
                 }
             }
             if (NODE_ID == NODE_C_ID) {
-                printf("Select destination: (1)A (2)C (3)D\n");
+                printf("Select destination: (1)A (2)B (3)D\n");
                 scanf("%d", &temp);
                 if (temp == 1) {
                     data_input.destination = NODE_A_ID;
@@ -287,6 +287,19 @@ void p1() {
                 }
                 if (temp == 3) {
                     data_input.destination = NODE_D_ID;
+                }
+            }
+            if (NODE_ID == NODE_D_ID) {
+                printf("Select destination: (1)A (2)B (3)C\n");
+                scanf("%d", &temp);
+                if (temp == 1) {
+                    data_input.destination = NODE_A_ID;
+                }
+                if (temp == 2) {
+                    data_input.destination = NODE_B_ID;
+                }
+                if (temp == 3) {
+                    data_input.destination = NODE_C_ID;
                 }
             }
             data_input.source = NODE_ID;
@@ -967,16 +980,16 @@ void p3() {
                         }
                         else {
                             if (hop[index_node_transfer].id == NODE_A_ID) {
-                                printf("Deliver message to NODE_A.\n");
+                                printf("Transfer message to NODE_A.\n");
                             }
                             if (hop[index_node_transfer].id == NODE_B_ID) {
-                                printf("Deliver message to NODE_B.\n");
+                                printf("Transfer message to NODE_B.\n");
                             }
                             if (hop[index_node_transfer].id == NODE_C_ID) {
-                                printf("Deliver message to NODE_C.\n");
+                                printf("Transfer message to NODE_C.\n");
                             }
                             if (hop[index_node_transfer].id == NODE_D_ID) {
-                                printf("Deliver message to NODE_D.\n");
+                                printf("Transfer message to NODE_D.\n");
                             }
                             data_send = data_recv;
                             data_send.source = NODE_ID;
