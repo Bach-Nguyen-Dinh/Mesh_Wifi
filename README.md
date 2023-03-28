@@ -7,7 +7,10 @@
 Mạng mesh là một cấu trúc liên kết trong mạng LAN với một tập hợp các node giao tiếp với nhau. Mỗi node đều có khả năng kết nối tới các node còn lại một cách trực tiếp hoặc gián tiếp (thông qua các node trung gian đóng vai trò chuyển tiếp). Kết nối giữa các node không là cố định và vai trò của mỗi node đối với toàn bộ cấu trúc là như nhau. 
 
 Tùy vào lập trình và các thuật toán sử dụng mà cấu trúc của mạng mesh sẽ tự động điều chỉnh trước những thay đổi về số lượng node trong mạng hoặc thay đổi về kết nối giữa các node.
- 
+<br/>
+<p align="center">
+  <img src="https://github.com/Bach-Nguyen-Dinh/Mesh_Wifi/blob/master/pictures/mesh_architecture.jpg"/>
+</p>
 
 ### <br/>**1.2. Thành phần trong hệ thống**<br/>
 Các thành phần mạng trong một mạng mesh không dây
@@ -21,15 +24,17 @@ Về lí thuyết, kết nối giữa các thành phần trong mạng mesh khôn
 
 ### <br/>**1.3. Thuật toán định tuyến**<br/>
 Mạng mesh được đặc trưng bởi khả năng tự tổ chức và tự phục hồi, đồng thời có khả năng chuyển tiếp bản tin giữa các node trong hệ thống tạo nên một mạng lưới truyền thông liên tục không gián đoạn từ node nguồn tới node đích. Do đó, nhiều giao thức định tuyến được phát triển và điều chỉnh để phù hợp với tính chất của mạng mesh. 
- 
-Nguyên lí chung của các thuật toán định tuyến là mỗi node giao tiếp thông tin định tuyến của nó với các node khác trong mạng, ví dụ, các trường bổ sung thông tin trong một khung bản tin. Với thông tin nhận được, dựa trên chức năng của giao thức định tuyến, mỗi node sẽ quyết định chuyển tiếp hay giữ dữ liệu cho chính node đó. Điều cần thiết đối với bất kỳ thuật toán định tuyến nào là đảm bảo rằng việc định tuyến được thực hiện sẽ dự đoán đường đi ngắn nhất giữa node nguồn và node đích. Bất cứ khi nào có sự thay đổi trong cấu trúc mạng như việc thêm hay xóa các node sẽ yêu cầu phải cập nhật lại đường đi.
-
-Định tuyến chủ động - **Proactive Routing** - Các giao thức chủ động cố gắng đánh giá liên tục tất cả các tuyến trong mạng để khi một gói cần được chuyển tiếp, đường đi của bản tin đã được biết và sẵn sàng để sử dụng.
+<br/>
+<p align="center">
+  <img src="https://github.com/Bach-Nguyen-Dinh/Mesh_Wifi/blob/master/pictures/routing_method.jpg"/>
+</p> 
+Nguyên lí chung của các thuật toán định tuyến là mỗi node giao tiếp thông tin định tuyến của nó với các node khác trong mạng, ví dụ, các trường bổ sung thông tin trong một khung bản tin. Với thông tin nhận được, dựa trên chức năng của giao thức định tuyến, mỗi node sẽ quyết định chuyển tiếp hay giữ dữ liệu cho chính node đó. Điều cần thiết đối với bất kỳ thuật toán định tuyến nào là đảm bảo rằng việc định tuyến được thực hiện sẽ dự đoán đường đi ngắn nhất giữa node nguồn và node đích. Bất cứ khi nào có sự thay đổi trong cấu trúc mạng như việc thêm hay xóa các node sẽ yêu cầu phải cập nhật lại đường đi.<br/><br/>
+Định tuyến chủ động - Proactive Routing - Các giao thức chủ động cố gắng đánh giá liên tục tất cả các tuyến trong mạng để khi một gói cần được chuyển tiếp, đường đi của bản tin đã được biết và sẵn sàng để sử dụng.
 Ví dụ, Routing method, dữ liệu được truyền theo 1 đường, mạng phải có khả năng tự cấu hình lại khi một node bị hỏng hoặc bổ sung thêm node mới hoặc kết nối không ổn định bằng các thuật toán như Shortest Path Bridging hay TRILL (TRansparent Interconnection of Lots of Links)
   
-Định tuyến thụ động - **Reactive Routing** - Các giao thức định tuyến thụ động sẽ gọi đến một chương trình con để tìm đường khi có yêu cầu. Phương pháp định tuyến thụ động thường hoạt động dựa trên mô hình truy vấn/trả lời, tất cả các node trong hệ thống sẽ nhận bản tin cho đến khi gửi tới đích đến mong muốn. 
+<br/>Định tuyến thụ động - Reactive Routing - Các giao thức định tuyến thụ động sẽ gọi đến một chương trình con để tìm đường khi có yêu cầu. Phương pháp định tuyến thụ động thường hoạt động dựa trên mô hình truy vấn/trả lời, tất cả các node trong hệ thống sẽ nhận bản tin cho đến khi gửi tới đích đến mong muốn. 
 
-Định tuyến kết hợp - **Hybrid Routing** - Các giao thức thuộc nhóm này này tận dụng cả kỹ thuật chủ động và bị động để xác định đường đi tốt nhất giữa bất kỳ cặp nút nào.
+Định tuyến kết hợp - Hybrid Routing - Các giao thức thuộc nhóm này này tận dụng cả kỹ thuật chủ động và bị động để xác định đường đi tốt nhất giữa bất kỳ cặp nút nào.
 
 ### <br/>**1.4. Các lợi thế của mạng mesh không dây**<br/>
 - Độ bao phủ cao: đối với các loại mạng truyền thống, kết nối mạng được phân phối qua một điểm truy cập duy nhất, nó có nghĩa là nếu khu vực cách xa bộ định tuyến hoặc khu vực có nhiều vật cản che khuất đường truyền, kết nối sẽ bị chậm hoặc đứt đoạn.
@@ -41,9 +46,12 @@ Các thiết bị trong một mạng giao tiếp với nhau thông qua một kh�
 -	Address family: sử dụng loại địa chỉ IPv4 hay loại địa chỉ Ipv6
 -	Loại socket: stream socket hay datagram socket
 -	Giao thức của socket: ứng với loại socket sử dụng giao thức TCP hay giao thức UDP
+<br/>
 Sau khi khởi tạo thành công một socket, thiết bị đó có thể thực hiện kết nối tới các thiết bị khác thông qua socket vừa tạo nhưng không thể lắng nghe các thiết bị khác kết nối tới.
-
- 
+<br/>
+<p align="center">
+  <img src="https://github.com/Bach-Nguyen-Dinh/Mesh_Wifi/blob/master/pictures/socket.jpg"/>
+</p> 
 
 Để có thể cho phép các thiết bị khác kết nối đến, cần phải tạo một socket mới. Socket này có nhiện vụ lắng nghe các kết nối tới. Đồng thời, socket mới này cần phải được gán với ít nhất một địa chỉ IP và một số port, hành động này gọi là bind. Với cùng một địa chỉ IP nhưng với các số port khác nhau, một thiết bị có thể thực hiện nhiều chức năng khác nhau. 
 
@@ -55,13 +63,21 @@ Trong mô hình client - server, client là thiết bị kết nối tới serve
 ## **3. Yêu cầu mô phỏng mạng mesh wifi**<br/>
 ### **3.1. Kịch bản 1**<br/>
 Hệ thống gồm 4 node, trong trạng thái hoạt động bình thường có kết nối được mô tả như sau:
+<br/>
+<p align="center">
+  <img src="https://github.com/Bach-Nguyen-Dinh/Mesh_Wifi/blob/master/pictures/scenario_1_layout.jpg"/>
+</p> 
  
 Từ node A có thể gửi bản tin trực tiếp đến cả 3 node còn lại.
 Khi xảy ra sự cố mất kết nối giữa node A và node C, node A sẽ phải hỏi những node còn lại tìm một đường đi mới cho bản tin đến node C. Nếu có node nào phản hồi là tìm được đường thì gửi bản tin đến node C theo đường đó.
 <br/><br/>
 ### **3.2. Kịch bản 2**<br/>
 Hệ thống gồm 4 node, trong trạng thái hoạt động bình thường có kết nối được mô tả như sau:
- 
+<br/>
+<p align="center">
+  <img src="https://github.com/Bach-Nguyen-Dinh/Mesh_Wifi/blob/master/pictures/scenario_2_layout.jpg"/>
+</p> 
+
 Khi xảy ra sự cố mất kết nối giữa node A và node C, node A sẽ phải hỏi những node còn lại tìm một đường đi mới cho bản tin đến node C. Bản tin tìm đường sẽ phải thực hiện quá trình chuyển tiếp qua các node trung gian. Tại các node trung gian, chúng cũng tiếp tục phải hỏi các node xung quanh để chuyển tiếp bản tin bằng các node trung gian khác. 
 
 
