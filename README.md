@@ -87,12 +87,11 @@ Giả sử sau khi gửi bản tin broadcast, mỗi node sẽ có một danh sá
 
 ### **4.1. Trường hợp hoạt động bình thường**<br/>
 Do node A biết có đường kết nối tới node C, vì vậy node A sẽ không hỏi các node B và node D tìm đường tới node C
+<br/>
+<p align="center">
+  <img src="https://github.com/Bach-Nguyen-Dinh/Mesh_Wifi/blob/master/pictures/run_no_incidence.jpg"/>
+</p>
 
- 
-
-
-Kết quả chạy thực tế
-Thứ tự lần lượt node A và nodeC
 <br/><br/>
 ### **4.2. Trường hợp mất kết nối**<br/>
 **4.2.1. Kịch bản 1**<br/>
@@ -101,22 +100,25 @@ Do node A mất kết nối với C, vì vậy node A sẽ gửi bản tin tìm 
 Các node đó lại lần lượt gửi bản tin tìm đường đến node C đến những node xung quanh. Quá trình lặp lại cho đến khi không node nào tìm thấy node C hoặc node C là một trong các node lân cận của một node đang được nhận bản tin tìm đường.
 
 Trong quá trình hỏi lần lượt để tìm đường, mỗi lượt hỏi và đợi phản hồi sẽ có time out rồi mới chuyển sang hỏi node tiếp theo. 
- 
+<br/>
+<p align="center">
+  <img src="https://github.com/Bach-Nguyen-Dinh/Mesh_Wifi/blob/master/pictures/run_scenario1_1.jpg"/>
+</p> 
 
 Sau khi tìm thành công đường đi mới đến node C, các node trên đường đi sẽ chuyển sang chế độ đợi bản tin gửi đến để chuyển tiếp bản tin đó cho node C.
 
 Nếu trong quá trình chuyển tiếp bản tin đến node C mà có bất kì node nào trong đường đi bị ngắt kết nối thì sẽ báo lỗi không thể gửi bản tin đến node C. Nếu muốn gửi lại thì phải lặp lại quá trình tìm đường đi đến node C và chuyển tiếp bản tin đến node C.
- 
-
-
-Kết quả chạy thực tế<br/>
-Thứ tự lần lượt node A, node B và node C
+<br/>
+<p align="center">
+  <img src="https://github.com/Bach-Nguyen-Dinh/Mesh_Wifi/blob/master/pictures/run_scenario1_2.jpg"/>
+</p>
  
 <br/>**4.2.2. Kịch bản 2**<br/>
 Trong trường hợp có nhiều node trung gian, quá trình tìm đường đến node C sẽ cần phải lặp lại quá trình chuyển tiếp bản tin tìm đường qua các node trung gian. 
- 
-Kết quả chạy thực tế<br/>
-Thứ tự lần lượt là node A, node B, node D và node C
+<br/>
+<p align="center">
+  <img src="https://github.com/Bach-Nguyen-Dinh/Mesh_Wifi/blob/master/pictures/run_scenario2.jpg"/>
+</p>
 
 <br/><br/>
 ## **5. Các nguy cơ, độ an toàn của mạng mesh**<br/>
